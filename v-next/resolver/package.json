@@ -60,6 +60,7 @@
   },
   "dependencies": {
     "@ignored/hardhat-vnext-errors": "workspace:^3.0.0-next.2",
-    "@ignored/hardhat-vnext-utils": "workspace:^3.0.0-next.2"
+    "@ignored/hardhat-vnext-utils": "workspace:^3.0.0-next.2",
+    "@nomicfoundation/slang": "0.16.0"
   }
 }

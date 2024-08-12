@@ -2303,10 +2303,13 @@ importers:
       '@ignored/hardhat-vnext-utils':
         specifier: workspace:^3.0.0-next.2
         version: link:../hardhat-utils
+      '@nomicfoundation/slang':
+        specifier: 0.16.0
+        version: 0.16.0
     devDependencies:
       '@eslint-community/eslint-plugin-eslint-comments':
         specifier: ^4.3.0
-        version: 4.3.0(eslint@8.57.0)
+        version: 4.4.0(eslint@8.57.0)
       '@ignored/hardhat-vnext-node-test-reporter':
         specifier: workspace:^3.0.0-next.2
         version: link:../hardhat-node-test-reporter
@@ -2321,13 +2324,13 @@ importers:
         version: link:../hardhat-test-utils
       '@types/node':
         specifier: ^20.14.9
-        version: 20.14.9
+        version: 20.16.1
       '@typescript-eslint/eslint-plugin':
         specifier: ^7.7.1
-        version: 7.9.0(@typescript-eslint/parser@7.9.0(eslint@8.57.0)(typescript@5.5.2))(eslint@8.57.0)(typescript@5.5.2)
+        version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)
       '@typescript-eslint/parser':
         specifier: ^7.7.1
-        version: 7.9.0(eslint@8.57.0)(typescript@5.5.2)
+        version: 7.18.0(eslint@8.57.0)(typescript@5.5.4)
       c8:
         specifier: ^9.1.0
         version: 9.1.0
@@ -2339,10 +2342,10 @@ importers:
         version: 9.1.0(eslint@8.57.0)
       eslint-import-resolver-typescript:
         specifier: ^3.6.1
-        version: 3.6.1(@typescript-eslint/parser@7.9.0(eslint@8.57.0)(typescript@5.5.2))(eslint-plugin-import@2.29.1)(eslint@8.57.0)
+        version: 3.6.3(@typescript-eslint/parser@7.18.0(eslint@8.57.0)(typescript@5.5.4))(eslint-plugin-import@2.29.1)(eslint@8.57.0)
       eslint-plugin-import:
         specifier: 2.29.1
-        version: 2.29.1(@typescript-eslint/parser@7.9.0(eslint@8.57.0)(typescript@5.5.2))(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.0)
+        version: 2.29.1(@typescript-eslint/parser@7.18.0(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.0)
       eslint-plugin-no-only-tests:
         specifier: 3.1.0
         version: 3.1.0
@@ -2357,16 +2360,16 @@ importers:
         version: 3.2.5
       rimraf:
         specifier: ^5.0.5
-        version: 5.0.5
+        version: 5.0.10
       tsx:
         specifier: ^4.11.0
-        version: 4.11.0
+        version: 4.18.0
       typescript:
         specifier: ~5.5.0
-        version: 5.5.2
+        version: 5.5.4
       typescript-eslint:
         specifier: 7.7.1
-        version: 7.7.1(eslint@8.57.0)(typescript@5.5.2)
+        version: 7.7.1(eslint@8.57.0)(typescript@5.5.4)
 
   v-next/template-package:
     devDependencies:
@@ -3087,6 +3090,46 @@ packages:
 
   '@nomicfoundation/ignition-ui@0.15.5':
     resolution: {integrity: sha512-ZcE4rIn10qKahR4OqS8rl8NM2Fbg2QYiBXgMgj74ZI0++LlCcZgB5HyaBbX+lsnKHjTXtjYD3b+2mtg7jFbAMQ==}
+
+  '@nomicfoundation/slang-darwin-arm64@0.16.0':
+    resolution: {integrity: sha512-tdrpV2/sEy9pWevl6pg2qdG8chV5R2lO80D0vgwP3FTd27vwLRgAdSMSUlhtVSb8NWKx6E1dagjjNfabUzmZpQ==}
+    engines: {node: '>= 10'}
+
+  '@nomicfoundation/slang-darwin-x64@0.16.0':
+    resolution: {integrity: sha512-a4OsidbwzaKOR7693ImYUSRKnmOs1xvTJviln0bc9nr6fngSkzXF7ijlHL/9/FrBhCIR+jY2ozmncWNOmqrvjQ==}
+    engines: {node: '>= 10'}
+
+  '@nomicfoundation/slang-linux-arm64-gnu@0.16.0':
+    resolution: {integrity: sha512-4kHqeVbJ6HvmhSIP3p/vS4SjiaC8/TRbeh+6jT77mr6fb6fVxUcVdNwCTVPocn7GRx1rYAsuYqjYZkeS72ubzg==}
+    engines: {node: '>= 10'}
+
+  '@nomicfoundation/slang-linux-arm64-musl@0.16.0':
+    resolution: {integrity: sha512-seuEaQSEGa3yqBI6Y/HH4X10+f7BNkX5OzOTNjWejqSIFAVBj0mWNBNWetT2YWDHRqiOSm5khD3+8LaSvShDRQ==}
+    engines: {node: '>= 10'}
+
+  '@nomicfoundation/slang-linux-x64-gnu@0.16.0':
+    resolution: {integrity: sha512-DI8sIWhz1EsuAE2L4vlBM48WaSaWpRgUixG1ZHIlxpTwzn6s+DxmfAxmOcBeLpNdtfba9eSpqF+2539zllktPQ==}
+    engines: {node: '>= 10'}
+
+  '@nomicfoundation/slang-linux-x64-musl@0.16.0':
+    resolution: {integrity: sha512-80obGwJ336r5wxQ/dLzEDp1nlAYtMWdnP5G5T2JmCnIkxxEVnyQIH62VcK6mc7RMSVeAlL1RGGx2LdNbk9V4QA==}
+    engines: {node: '>= 10'}
+
+  '@nomicfoundation/slang-win32-arm64-msvc@0.16.0':
+    resolution: {integrity: sha512-hcmsfXjRaCuy5/eUhrdDOnE5uqfJ0vVXvon5mTHaWzf6UE4REIx3vJwf/t4QQu1Q4mKKO5ZxzauBdzRtbhOKsw==}
+    engines: {node: '>= 10'}
+
+  '@nomicfoundation/slang-win32-ia32-msvc@0.16.0':
+    resolution: {integrity: sha512-W9959+Tdq71kkE5EGxoQWBxhpe9bjxpY7ozDoPjz2lBzaGi8X24z4toS6us3W83URIf6Cve0VizAX4fz5MWjFw==}
+    engines: {node: '>= 10'}
+
+  '@nomicfoundation/slang-win32-x64-msvc@0.16.0':
+    resolution: {integrity: sha512-sOKuMtm3g62ugdhgpWqjF+o3clIR4eAIiAbx6oRPGB/9fPukgZnI5untsgTYJyVldAzby7jlIQ4R7df18aNraw==}
+    engines: {node: '>= 10'}
+
+  '@nomicfoundation/slang@0.16.0':
+    resolution: {integrity: sha512-JBI+X+6/1WnaVNvnWp7o9PRbIFpgxKDmEKzYnMUfrBGFmm7rT2PsvFvVBoZPeM09B0AFYK+XJt9tqnbJvzhlLw==}
+    engines: {node: '>= 10'}
 
   '@nomicfoundation/solidity-analyzer-darwin-arm64@0.1.2':
     resolution: {integrity: sha512-JaqcWPDZENCvm++lFFGjrDd8mxtf+CtLd2MiXvMNTBD33dContTZ9TWETwNFwg7JTJT5Q9HEecH7FA+HTSsIUw==}
@@ -7769,6 +7812,36 @@ snapshots:
       - utf-8-validate
 
   '@nomicfoundation/ignition-ui@0.15.5': {}
+
+  '@nomicfoundation/slang-darwin-arm64@0.16.0': {}
+
+  '@nomicfoundation/slang-darwin-x64@0.16.0': {}
+
+  '@nomicfoundation/slang-linux-arm64-gnu@0.16.0': {}
+
+  '@nomicfoundation/slang-linux-arm64-musl@0.16.0': {}
+
+  '@nomicfoundation/slang-linux-x64-gnu@0.16.0': {}
+
+  '@nomicfoundation/slang-linux-x64-musl@0.16.0': {}
+
+  '@nomicfoundation/slang-win32-arm64-msvc@0.16.0': {}
+
+  '@nomicfoundation/slang-win32-ia32-msvc@0.16.0': {}
+
+  '@nomicfoundation/slang-win32-x64-msvc@0.16.0': {}
+
+  '@nomicfoundation/slang@0.16.0':
+    dependencies:
+      '@nomicfoundation/slang-darwin-arm64': 0.16.0
+      '@nomicfoundation/slang-darwin-x64': 0.16.0
+      '@nomicfoundation/slang-linux-arm64-gnu': 0.16.0
+      '@nomicfoundation/slang-linux-arm64-musl': 0.16.0
+      '@nomicfoundation/slang-linux-x64-gnu': 0.16.0
+      '@nomicfoundation/slang-linux-x64-musl': 0.16.0
+      '@nomicfoundation/slang-win32-arm64-msvc': 0.16.0
+      '@nomicfoundation/slang-win32-ia32-msvc': 0.16.0
+      '@nomicfoundation/slang-win32-x64-msvc': 0.16.0
 
   '@nomicfoundation/solidity-analyzer-darwin-arm64@0.1.2':
     optional: true
