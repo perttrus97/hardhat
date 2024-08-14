@@ -2303,6 +2303,9 @@ importers:
       '@ignored/hardhat-vnext-utils':
         specifier: workspace:^3.0.0-next.2
         version: link:../hardhat-utils
+      '@marsraptor/bitset':
+        specifier: ^1.0.0
+        version: 1.0.0
       '@nomicfoundation/slang':
         specifier: 0.16.0
         version: 0.16.0
@@ -2951,6 +2954,9 @@ packages:
 
   '@manypkg/get-packages@1.1.3':
     resolution: {integrity: sha512-fo+QhuU3qE/2TQMQmbVMqaQ6EWbMhi4ABWP+O4AM1NqPBuy0OrApV5LO6BrrgnhtAHS2NH6RrVk9OL181tTi8A==}
+
+  '@marsraptor/bitset@1.0.0':
+    resolution: {integrity: sha512-NWxL7Agrt9r8Qd3ZO409tYu3GXMB4FijER8I7I7C7NDETGscBiYXVUGrwLqybE0ceWuc0eF1GGxE0pXOL/ZWnw==}
 
   '@metamask/eth-sig-util@4.0.1':
     resolution: {integrity: sha512-tghyZKLHZjcdlDqCA3gNZmLeR0XvOE9U1qoQO9ohyAZT6Pya+H9vkBPcsyXytmYLNgVoin7CKCmweo/R43V+tQ==}
@@ -7655,6 +7661,8 @@ snapshots:
       fs-extra: 8.1.0
       globby: 11.1.0
       read-yaml-file: 1.1.0
+
+  '@marsraptor/bitset@1.0.0': {}
 
   '@metamask/eth-sig-util@4.0.1':
     dependencies:
