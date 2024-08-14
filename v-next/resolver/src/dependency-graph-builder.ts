@@ -1,3 +1,4 @@
+import type { Remapping } from "./types.js";
 import type { Cursor } from "@nomicfoundation/slang/cursor/index.js";
 
 import { assertHardhatInvariant } from "@ignored/hardhat-vnext-errors";
@@ -31,12 +32,6 @@ interface Source {
     compatibleVersions: BitSet.default;
 }
 
-export interface Remapping {
-    context: string;
-    prefix: string;
-    target: string;
-}
-
 export interface Root {
     dependencies: Set<SourceName>;
     bestVersion?: Version;
@@ -57,6 +52,8 @@ export class Project {
 
     public createRoot(rootSourceName: SourceName): Root {
         // maybe this should mark the root as changed if we already have it?
+        // in which case we need to be able to remove a root as well, and
+        // trigger a rebuild if a non-root source changes.
 
         if (!this.#roots.has(rootSourceName)) {
 
@@ -81,9 +78,8 @@ export class Project {
                     assertHardhatInvariant(source !== undefined, "We have already added this source to the graph");
 
                     const contents = this.#getSourceContent(sourceName);
-                    const output = language.parse(NonterminalKind.SourceUnit, contents);
-                    const cursor = output.createTreeCursor();
-                    const matches = cursor.query(queries);
+                    const parseOutput = language.parse(NonterminalKind.SourceUnit, contents);
+                    const matches = parseOutput.createTreeCursor().query(queries);
 
                     let match;
                     while ((match = matches.next()) !== null) {
@@ -145,11 +141,13 @@ export class Project {
         return root;
     }
 
+    // This should be abstract
     #getSourceContent(_sourceName: SourceName): string {
         // TODO: read the file (failure is a fatal error)
         return "";
     }
 
+    // This should be abstract
     #resolveImport(_context: SourceName, _importPath: string): SourceName {
         // TODO: convert a relative import to a direct import
         // TODO: resolve the import according to the context and this.#remappings (Pato's code)
