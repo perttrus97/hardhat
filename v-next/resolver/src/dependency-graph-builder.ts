@@ -29,6 +29,7 @@ type Version = string; // actually, no - find something better, from semver most
 
 interface Source {
     dependencies: Set<SourceName>;
+    dependents: Set<SourceName>;
     compatibleVersions: BitSet.default;
 }
 
@@ -37,35 +38,53 @@ export interface Root {
     bestVersion?: Version;
 }
 
-export class Project {
+export class ProjectConfiguration {
+    readonly roots: SourceName[];
+    readonly remappings: Remapping[];
+    readonly allowableVersions: Version[];
 
-    readonly #allowableVersions: Version[]; // sorted in descending order
-    readonly #remappings: Remapping[];
+    constructor(roots: SourceName[], remappings: Remapping[], allowableVersions?: Version[]) {
+        this.roots = roots;
+        this.remappings = remappings;
+        this.allowableVersions = allowableVersions ?? supportedVersions;
+    }
+}
 
-    readonly #sources = new Map<SourceName, Source>();
+export class ProjectModel {
+
+    #configuration: ProjectConfiguration;
+
     readonly #roots = new Map<SourceName, Root>();
+    readonly #sources = new Map<SourceName, Source>();
 
-    constructor(allowableVersions: Version[], remappings: Remapping[]) {
-        this.#allowableVersions = allowableVersions;
-        this.#remappings = remappings;
+    constructor(configuration: ProjectConfiguration) {
+        this.#configuration = configuration;
     }
 
-    public createRoot(rootSourceName: SourceName): Root {
-        // maybe this should mark the root as changed if we already have it?
-        // in which case we need to be able to remove a root as well, and
-        // trigger a rebuild if a non-root source changes.
+    public updateConfiguration(configuration: ProjectConfiguration): void {
+        this.#configuration = configuration;
+        // TODO: do minimum invalidation
+        this.#roots.clear();
+        this.#sources.clear();
+    }
 
+    public sourceDidChange(sourceName: SourceName): void {
+        // TODO: do minimum invalidation
+        this.#roots.clear();
+        this.#sources.clear();
+    }
+
+    public getRoot(rootSourceName: SourceName): Root {
         if (!this.#roots.has(rootSourceName)) {
 
             const unvisitedSourceNames = new Array<string>();
 
             const ensureSourceNameIsProcessed = (sourceName: SourceName) => {
                 if (!this.#sources.has(sourceName)) {
-                    this.#sources.set(sourceName, { dependencies: new Set(), compatibleVersions: new BitSet.default().flip() });
+                    this.#sources.set(sourceName, { dependencies: new Set(), dependents: new Set(), compatibleVersions: new BitSet.default().flip() });
                     unvisitedSourceNames.push(sourceName);
                 }
             }
-
 
             {
                 // Add the root and it's dependencies to the graph of sources
@@ -123,7 +142,7 @@ export class Project {
                 for (let i = supportedVersions.length - 1; i >= 0; i--) {
                     if (compatibleVersions.get(i) === 1) {
                         const candidateVersion = supportedVersions[i];
-                        if (this.#allowableVersions.includes(candidateVersion)) {
+                        if (this.#configuration.allowableVersions.includes(candidateVersion)) {
                             bestVersion = candidateVersion
                             break;
                         }
@@ -158,5 +177,6 @@ export class Project {
 
 function bitsetFromVersionExpression(_expr: Cursor) {
     // TODO: implement this
+    // after I have rewritten the grammar for version pragma expressions in Slang
     return new BitSet.default();
 };
