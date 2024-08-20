@@ -50,7 +50,7 @@ export class ProjectConfiguration {
     }
 }
 
-export class ProjectModel {
+export abstract class ProjectModel {
 
     #configuration: ProjectConfiguration;
 
@@ -96,14 +96,14 @@ export class ProjectModel {
                     const source = this.#sources.get(sourceName);
                     assertHardhatInvariant(source !== undefined, "We have already added this source to the graph");
 
-                    const contents = this.#getSourceContent(sourceName);
+                    const contents = this.getSourceContent(sourceName);
                     const parseOutput = language.parse(NonterminalKind.SourceUnit, contents);
                     const matches = parseOutput.createTreeCursor().query(queries);
 
                     let match;
                     while ((match = matches.next()) !== null) {
                         if (match.queryNumber === 0) {
-                            const importSourceName = this.#resolveImport(sourceName, match.captures.path[0].node.toString());
+                            const importSourceName = this.resolveImport(sourceName, match.captures.path[0].node.toString());
                             // TODO: what if the import doesn't exist?
                             source.dependencies.add(importSourceName);
                             ensureSourceNameIsProcessed(importSourceName);
@@ -160,18 +160,12 @@ export class ProjectModel {
         return root;
     }
 
-    // This should be abstract
-    #getSourceContent(_sourceName: SourceName): string {
-        // TODO: read the file (failure is a fatal error)
-        return "";
+    public getSolcInputs(sourceName: SourceName): { [key: string]: string } {
+        return {};
     }
 
-    // This should be abstract
-    #resolveImport(_context: SourceName, _importPath: string): SourceName {
-        // TODO: convert a relative import to a direct import
-        // TODO: resolve the import according to the context and this.#remappings (Pato's code)
-        return "";
-    }
+    abstract getSourceContent(_sourceName: SourceName): string;
+    abstract resolveImport(_context: SourceName, _importPath: string): SourceName;
 
 }
 
