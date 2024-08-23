@@ -38,31 +38,27 @@ export interface Root {
     bestVersion?: Version;
 }
 
-export class ProjectConfiguration {
-    readonly roots: SourceName[];
-    readonly remappings: Remapping[];
-    readonly allowableVersions: Version[];
-
-    constructor(roots: SourceName[], remappings: Remapping[], allowableVersions?: Version[]) {
-        this.roots = roots;
-        this.remappings = remappings;
-        this.allowableVersions = allowableVersions ?? supportedVersions;
-    }
+export class ProjectDefinition {
+    constructor(
+        readonly roots: SourceName[],
+        readonly remappings: Remapping[],
+        readonly allowableVersions: Version[] = supportedVersions
+    ) { }
 }
 
 export abstract class ProjectModel {
 
-    #configuration: ProjectConfiguration;
+    definition: ProjectDefinition;
 
     readonly #roots = new Map<SourceName, Root>();
     readonly #sources = new Map<SourceName, Source>();
 
-    constructor(configuration: ProjectConfiguration) {
-        this.#configuration = configuration;
+    constructor(definition: ProjectDefinition) {
+        this.definition = definition;
     }
 
-    public updateConfiguration(configuration: ProjectConfiguration): void {
-        this.#configuration = configuration;
+    public updateDefinition(definition: ProjectDefinition): void {
+        this.definition = definition;
         // TODO: do minimum invalidation
         this.#roots.clear();
         this.#sources.clear();
@@ -142,7 +138,7 @@ export abstract class ProjectModel {
                 for (let i = supportedVersions.length - 1; i >= 0; i--) {
                     if (compatibleVersions.get(i) === 1) {
                         const candidateVersion = supportedVersions[i];
-                        if (this.#configuration.allowableVersions.includes(candidateVersion)) {
+                        if (this.definition.allowableVersions.includes(candidateVersion)) {
                             bestVersion = candidateVersion
                             break;
                         }
