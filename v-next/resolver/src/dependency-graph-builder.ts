@@ -8,9 +8,11 @@ import { Language } from "@nomicfoundation/slang/language/index.js";
 import { Query } from "@nomicfoundation/slang/query/index.js";
 import { NodeType } from "@nomicfoundation/slang/cst/index.js";
 import { cursor } from "@nomicfoundation/slang/napi-bindings/generated/index.js";
-import { assert } from "console";
+
+
 
 // Maybe all these top level elements should be in the Project instance, to avoid startup cost?
+
 const supportedVersions = Language.supportedVersions();
 const mostRecentVersion = supportedVersions[supportedVersions.length - 1];
 const language = new Language(mostRecentVersion);
@@ -25,14 +27,20 @@ const pragmaQuery =
     `[VersionPragma [VersionExpressionSets (@versionExpression [VersionExpression])+]]`;
 const queries = [importQuery, pragmaQuery].map(Query.parse);
 
-type SourceName = string;
-type Version = string; // actually, no - find something better, from semver most likely
 
-interface Source {
-    dependencies: Set<SourceName>;
-    dependents: Set<SourceName>;
-    compatibleVersions: BitSet.default;
+
+type SourceName = string;
+type Version = string; // TODO: find something better, from semver most likely
+
+
+export class ProjectDefinition {
+    constructor(
+        readonly roots: SourceName[],
+        readonly remappings: Remapping[],
+        readonly allowableVersions: Version[] = supportedVersions // ... but if this is lazy then we can't use it in the constructor
+    ) { }
 }
+
 
 export interface Root {
     dependencies: Set<SourceName>;
@@ -40,13 +48,13 @@ export interface Root {
     bestVersion?: Version;
 }
 
-export class ProjectDefinition {
-    constructor(
-        readonly roots: SourceName[],
-        readonly remappings: Remapping[],
-        readonly allowableVersions: Version[] = supportedVersions
-    ) { }
+
+interface Source {
+    dependencies: Set<SourceName>;
+    dependents: Set<SourceName>;
+    compatibleVersions: BitSet.default;
 }
+
 
 export abstract class ProjectModel {
 
@@ -201,6 +209,7 @@ function bitsetFromVersionExpression(expr: Cursor): BitSet.default | undefined {
         assertHardhatInvariant(operator.type === NodeType.Terminal, "Expected operator to be a terminal");
 
         // TODO: compute bitset
+        // TODO: Invalid operator applications i.e. "< 0.4.11" should be caught by the parser
         switch (operator.kind) {
             case TerminalKind.Caret: break;
             case TerminalKind.Tilde: break;
@@ -215,7 +224,8 @@ function bitsetFromVersionExpression(expr: Cursor): BitSet.default | undefined {
     }
 };
 
-// Parse error => undefined
+// Parse error, or invalid version => undefined
+// TODO: Invalid versions should be caught by the parser
 function versionIndexFromLiteral(literal: cursor.Cursor): number | undefined {
     throw new Error("Function not implemented.");
 }
