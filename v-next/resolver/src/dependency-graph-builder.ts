@@ -3,11 +3,14 @@ import type { Cursor } from "@nomicfoundation/slang/cursor/index.js";
 
 import { assertHardhatInvariant } from "@ignored/hardhat-vnext-errors";
 import BitSet from "@marsraptor/bitset";
-import { NonterminalKind } from "@nomicfoundation/slang/kinds/index.js";
+import { NonterminalKind, TerminalKind } from "@nomicfoundation/slang/kinds/index.js";
 import { Language } from "@nomicfoundation/slang/language/index.js";
 import { Query } from "@nomicfoundation/slang/query/index.js";
+import { NodeType } from "@nomicfoundation/slang/cst/index.js";
+import { cursor } from "@nomicfoundation/slang/napi-bindings/generated/index.js";
+import { assert } from "console";
 
-// Maybe this should all be in the Project instance, to avoid startup cost?
+// Maybe all these top level elements should be in the Project instance, to avoid startup cost?
 const supportedVersions = Language.supportedVersions();
 const mostRecentVersion = supportedVersions[supportedVersions.length - 1];
 const language = new Language(mostRecentVersion);
@@ -35,6 +38,7 @@ interface Source {
 
 export interface Root {
     dependencies: Set<SourceName>;
+    // undefined if we couldn't determine the best version
     bestVersion?: Version;
 }
 
@@ -104,9 +108,15 @@ export abstract class ProjectModel {
                             source.dependencies.add(importSourceName);
                             ensureSourceNameIsProcessed(importSourceName);
                         } else {
-                            // VersionExpressionSets are the disjunction of VersionExpressions
-                            const compatibleVersions = match.captures.versionExpression.map(bitsetFromVersionExpression).reduce((a, b) => a.or(b));
-                            source.compatibleVersions = source.compatibleVersions.and(compatibleVersions);
+                            // VersionExpressionSets are the disjunction of VersionExpression(s)
+
+                            // Filter out any parse errors
+                            const compatibleVersions = match.captures.versionExpression.map(bitsetFromVersionExpression).filter(v => v !== undefined);
+
+                            // No point adding a constraint that was nothing but parse errors
+                            if (compatibleVersions.length !== 0) {
+                                source.compatibleVersions = source.compatibleVersions.and(compatibleVersions.reduce((a, b) => a.or(b)));
+                            }
                         }
                     }
                 }
@@ -156,17 +166,56 @@ export abstract class ProjectModel {
         return root;
     }
 
-    public getSolcInputs(sourceName: SourceName): { [key: string]: string } {
-        return {};
-    }
-
     abstract getSourceContent(_sourceName: SourceName): string;
     abstract resolveImport(_context: SourceName, _importPath: string): SourceName;
 
 }
 
-function bitsetFromVersionExpression(_expr: Cursor) {
-    // TODO: implement this
-    // after I have rewritten the grammar for version pragma expressions in Slang
-    return new BitSet.default();
+const versionExpressionQueries =
+    [
+        `[VersionExpression [VersionRange [@start start: [VersionLiteral] @end end: [VersionLiteral]]]]`,
+        `[VersionExpression [VersionTerm  [operator: [VersionOperator @operator [_]] @literal literal: [VersionLiteral]]]]`,
+    ].map(Query.parse);
+
+// Parse error => undefined
+function bitsetFromVersionExpression(expr: Cursor): BitSet.default | undefined {
+    const matches = expr.spawn().query(versionExpressionQueries);
+    const match = matches.next();
+    if (match === null) return undefined;
+    if (match.queryNumber === 0) {
+        // VersionRange
+
+        const start = versionIndexFromLiteral(match.captures.start[0]);
+        if (start === undefined) return undefined;
+        const end = versionIndexFromLiteral(match.captures.end[0]);
+        if (end === undefined) return undefined;
+        // TODO: compute bitset
+
+    } else {
+        // VersionTerm
+
+        const literal = versionIndexFromLiteral(match.captures.literal[0]);
+        if (literal === undefined) return undefined;
+
+        const operator = match.captures.operator[0].node();
+        // TODO: use assertion functions from v1 api
+        assertHardhatInvariant(operator.type === NodeType.Terminal, "Expected operator to be a terminal");
+        // TODO: compute bitset
+        switch (operator.kind) {
+            case TerminalKind.Caret: break;
+            case TerminalKind.Tilde: break;
+            case TerminalKind.Equal: break;
+            case TerminalKind.LessThan: break;
+            case TerminalKind.GreaterThan: break;
+            case TerminalKind.LessThanEqual: break;
+            case TerminalKind.GreaterThanEqual: break;
+            default: assertHardhatInvariant(false, `Unexpected operator ${operator}`);
+        }
+
+    }
 };
+
+// Parse error => undefined
+function versionIndexFromLiteral(literal: cursor.Cursor): number | undefined {
+    throw new Error("Function not implemented.");
+}
