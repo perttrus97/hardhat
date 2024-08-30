@@ -21,10 +21,8 @@ const importQuery =
      | [NamedImport @path path: [_]]
      | [ImportDeconstruction @path path: [_]]
      )`;
-
 const pragmaQuery =
     `[VersionPragma [VersionExpressionSets (@versionExpression [VersionExpression])+]]`;
-
 const queries = [importQuery, pragmaQuery].map(Query.parse);
 
 type SourceName = string;
@@ -171,24 +169,25 @@ export abstract class ProjectModel {
 
 }
 
-const versionExpressionQueries =
-    [
-        `[VersionExpression [VersionRange [@start start: [VersionLiteral] @end end: [VersionLiteral]]]]`,
-        `[VersionExpression [VersionTerm  [operator: [VersionOperator @operator [_]] @literal literal: [VersionLiteral]]]]`,
-    ].map(Query.parse);
+const versionRangeQuery = `[VersionRange [@start start: [VersionLiteral] @end end: [VersionLiteral]]]`;
+const versionTermQuery = `[VersionTerm  [operator: [VersionOperator @operator [_]] @literal literal: [VersionLiteral]]]`;
+const versionExpressionQueries = [versionRangeQuery, versionTermQuery].map(Query.parse);
 
 // Parse error => undefined
 function bitsetFromVersionExpression(expr: Cursor): BitSet.default | undefined {
     const matches = expr.spawn().query(versionExpressionQueries);
     const match = matches.next();
     if (match === null) return undefined;
+
     if (match.queryNumber === 0) {
         // VersionRange
 
         const start = versionIndexFromLiteral(match.captures.start[0]);
         if (start === undefined) return undefined;
+
         const end = versionIndexFromLiteral(match.captures.end[0]);
         if (end === undefined) return undefined;
+
         // TODO: compute bitset
 
     } else {
@@ -200,6 +199,7 @@ function bitsetFromVersionExpression(expr: Cursor): BitSet.default | undefined {
         const operator = match.captures.operator[0].node();
         // TODO: use assertion functions from v1 api
         assertHardhatInvariant(operator.type === NodeType.Terminal, "Expected operator to be a terminal");
+
         // TODO: compute bitset
         switch (operator.kind) {
             case TerminalKind.Caret: break;
