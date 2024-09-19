@@ -73,7 +73,7 @@ export const ERROR_CATEGORIES: {
     max: 999,
     websiteTitle: "Network-helpers errors",
   },
-  SOLIDITY: { min: 700, max: 799, websiteTitle: "Solidity related errors" },
+  SOLIDITY: { min: 1000, max: 1099, websiteTitle: "Solidity related errors" },
 };
 
 export const ERRORS = {
@@ -688,27 +688,27 @@ This might be caused by using hardhat_reset and loadFixture calls in a testcase.
   },
   SOLIDITY: {
     RESOLVING_INCORRECT_FILE_AS_PROJECT_FILE: {
-      number: 700,
+      number: 1000,
       messageTemplate:
         "File {file} is being resolved as a project file, but it's not part of the project.",
       websiteTitle: "Solidity project file is outside the project",
       websiteDescription: `Tried to resolve a file as a project file, but it's not part of the project.`,
     },
     RESOLVING_NONEXISTENT_PROJECT_FILE: {
-      number: 701,
+      number: 1001,
       messageTemplate:
         "File {file} is being resolved as a project file, but it doesn't exist.",
       websiteTitle: "Solidity project file doesn't exist",
       websiteDescription: `Tried to resolve a file as a project file, but it doesn't exist.`,
     },
     IMPORTED_FILE_DOESNT_EXIST: {
-      number: 702,
+      number: 1002,
       messageTemplate: 'The import "{importPath} from "{from}" doesn\'t exist.',
       websiteTitle: "Imported file doesn't exist",
       websiteDescription: `An imported file doesn't exist.`,
     },
     IMPORTED_FILE_WITH_ICORRECT_CASING: {
-      number: 703,
+      number: 1003,
       messageTemplate:
         'The import "{importPath} from "{from}" exists, but its casing is incorrect. The correct casing is "{correctCasing}".',
       websiteTitle: "Imported file with incorrect casing",
@@ -717,14 +717,14 @@ This might be caused by using hardhat_reset and loadFixture calls in a testcase.
 This error is thrown when you import a file with the wrong casing under a case insensitve filesystem.`,
     },
     IMPORTED_NPM_DEPENDENCY_NOT_INSTALLED: {
-      number: 704,
+      number: 1004,
       messageTemplate:
         'The import "{importPath}" from "{from}" is trying to use an uinstalled npm dependency.',
       websiteTitle: "Uninstaleld npm solidity dependency",
       websiteDescription: `One of your files is traying to import a dependency using npm, but it hasn't been installed`,
     },
     IMPORTED_NPM_DEPENDENCY_THAT_USES_EXPORTS: {
-      number: 705,
+      number: 1005,
       messageTemplate:
         'The import "{importPath}" from "{from}" is trying to use an npm dependency that uses pacakge#exports, which is not supported by Hardhat.',
       websiteTitle:
@@ -732,7 +732,7 @@ This error is thrown when you import a file with the wrong casing under a case i
       websiteDescription: `One of your files is traying to import a dependency using npm, but it uses pacakge.json#exports, which Hardhat doesn't support`,
     },
     USER_REMAPPING_WITH_NPM_CONTEXT: {
-      number: 706,
+      number: 1006,
       messageTemplate:
         'The remapping "{remapping}" has a context starting with "npm/", which is forbidden. Hardhat doesn\'t allow changing the behaviour of npm package\'s imports.',
       websiteTitle: "Remapping imports in npm packages is not allowed",
@@ -741,7 +741,7 @@ This error is thrown when you import a file with the wrong casing under a case i
 While Hardhat supports user-defined remappings, it doesn't support remapping the behavior of npm packages to ensure that everything what's imported via npm uses the same npm resolution logic.`,
     },
     REMAPPING_WITH_INVALID_SYNTAX: {
-      number: 707,
+      number: 1007,
       messageTemplate: `The remapping "{remapping}" is invalid.`,
       websiteTitle: "Invalid remapping",
       websiteDescription: `You are trying to set a user remapping, but it's syntax is invalid.
@@ -749,7 +749,7 @@ While Hardhat supports user-defined remappings, it doesn't support remapping the
 Please double check your remmpaings' syntax.`,
     },
     REMAPPING_TO_UNINSTALLED_PACKAGE: {
-      number: 708,
+      number: 1008,
       messageTemplate: `The remapping "{remapping}" is trying to use the npm package "{package}", which is not installed`,
       websiteTitle: "Remapping into an uninstaleld npm package",
       websiteDescription: `You are trying to set a user remapping that uses an npm pacakge as target, but it's not installed.
@@ -757,21 +757,21 @@ Please double check your remmpaings' syntax.`,
 Please make sure to install the package or fix the remapping.`,
     },
     REMAPPING_TO_PACKAGE_USING_EXPORTS: {
-      number: 709,
+      number: 1009,
       messageTemplate: `The remapping "{remapping}" is using the npm package "{package}", which uses pacakge.json#exports, which is not supported by Hardhat`,
       websiteTitle:
         "Remapping into an npm package that uses pacakge.json#exports",
       websiteDescription: `You are trying to set a user remapping that uses an npm pacakge as target, but it uses pacakge.json#exports, which Hardhat doesn't support.`,
     },
     REMAPPING_NPM_PACKAGE_AS_MONOREPO: {
-      number: 710,
+      number: 1010,
       messageTemplate: `The remapping "{remapping}" targets the npm pacakge "{pacakge}" as if it were part of this repository, but version "{version}" is installed instead`,
       websiteTitle:
         "Remapping into a monorepo package but found an npm package instead",
       websiteDescription: `You are trying to set a remapping setting a monorepo package as target, but Hardhat found the pacakge to be installed from the npm regristry instead.`,
     },
     REMAPPING_HARDHAT_PROJECT_AS_MONOREPO_PACKAGE: {
-      number: 711,
+      number: 1011,
       messageTemplate: `The remapping "{remapping}" is trying to set the npm package "{package}" as target, but that's the project is the Hardhat project, so it shouldn't be remapped through npm/, but as internal project remappings.`,
       websiteTitle: `Remapping into the project using npm`,
       websiteDescription: `You are trying to set a remapping whose target uses the npm/ syntax, but is within your Hardhat project.
@@ -779,7 +779,7 @@ Please make sure to install the package or fix the remapping.`,
 Please don't use npm/... as target, but use normal internal project remapping istead.`,
     },
     REMAPPING_INCORRECT_VERSION: {
-      number: 712,
+      number: 1012,
       messageTemplate: `The remapping "{remapping}" is trying to set the npm package "{package}" version "{expectedVersion}" as target, but found version "{actualVersion}" instead.`,
       websiteTitle: `Remapping into incorrect npm package version`,
       websiteDescription: `You are trying to set a remapping into an npm package, but the version that you are using is not the currently installed one.
@@ -787,7 +787,7 @@ Please don't use npm/... as target, but use normal internal project remapping is
 Please change your remapping to match the installed version, or installed the correct one.`,
     },
     INVALID_NPM_IMPORT: {
-      number: 713,
+      number: 1013,
       messageTemplate: `The import "{imporPath}" in "{from}" is treated as an npm import as it's first directory doesn't exist in your project, but it's syntax is not that of a valid npm import either.`,
       websiteTitle: `Invalid npm import`,
       websiteDescription: `You are trying to import a file that is not a valid npm import. Please double check that you are using the correct syntax.`,
