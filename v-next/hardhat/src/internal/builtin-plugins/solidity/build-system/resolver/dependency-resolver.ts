@@ -1062,7 +1062,7 @@ export class ResolverImplementation implements Resolver {
         {
           importPath,
           from: this.#shortenPath(from.path),
-          correctCasing: trueCasePath,
+          correctCasing: normalizePathSeparator(trueCasePath),
         },
       );
     }
