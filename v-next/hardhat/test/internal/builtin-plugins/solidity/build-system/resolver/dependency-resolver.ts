@@ -13,7 +13,10 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import { HardhatError } from "@ignored/hardhat-vnext-errors";
 import { assertRejectsWithHardhatError } from "@nomicfoundation/hardhat-test-utils";
 
-import { ResolverImplementation } from "../../../../../../src/internal/builtin-plugins/solidity/build-system/resolver/dependency-resolver.js";
+import {
+  normalizePathSeparator,
+  ResolverImplementation,
+} from "../../../../../../src/internal/builtin-plugins/solidity/build-system/resolver/dependency-resolver.js";
 import { ResolvedFileType } from "../../../../../../src/internal/builtin-plugins/solidity/build-system/resolver/types.js";
 
 const TEST_FIXTURES_ROOT = path.resolve(import.meta.dirname, "test-fixtures");
@@ -31,7 +34,10 @@ function assertResolvedProjectFile(
     resolvedFile.type === ResolvedFileType.PROJECT_FILE,
     `Resolved file ${resolvedFile.path} is not a project file`,
   );
-  assert.equal(resolvedFile.sourceName, pathFromProjectRoot);
+  assert.equal(
+    resolvedFile.sourceName,
+    normalizePathSeparator(pathFromProjectRoot),
+  );
   assert.equal(
     resolvedFile.path,
     path.resolve(FIXTURE_HARDHAT_PROJECT_ROOT, pathFromProjectRoot),
@@ -72,7 +78,7 @@ function assertNpmPackageResolvedFile(
   });
   assert.equal(
     resolvedFile.sourceName,
-    pacakge.rootSourceName + filePathFromPackageRoot,
+    pacakge.rootSourceName + normalizePathSeparator(filePathFromPackageRoot),
   );
   assert.equal(
     resolvedFile.path,

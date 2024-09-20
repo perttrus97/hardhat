@@ -1270,8 +1270,11 @@ function isPackageJsonFromNpmPackage(packageJsonPath: string): boolean {
 /**
  * Normalizes the path separator of `pathToNormalize` to the use `/` in
  * platforms where path.sep is not `/`.
+ *
+ * Note: This function is exported for testing purposes, but it's not meant to
+ * be used outside of the resolver.
  */
-function normalizePathSeparator(pathToNormalize: string): string {
+export function normalizePathSeparator(pathToNormalize: string): string {
   if (path.sep !== "/") {
     return pathToNormalize;
   }
