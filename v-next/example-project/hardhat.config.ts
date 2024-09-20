@@ -133,6 +133,29 @@ const config: HardhatUserConfig = {
       nodeTest: "test/node",
     },
   },
+  solidity: {
+    profiles: {
+      default: {
+        compilers: [
+          {
+            version: "0.8.0",
+          },
+        ],
+        overrides: {
+          "foo/bar.sol": {
+            version: "0.8.1",
+          },
+        },
+      },
+      test: {
+        version: "0.8.2",
+      },
+      coverage: {
+        version: "0.8.2",
+      },
+    },
+    dependenciesToCompile: ["@OpenZeppelin/contracts/token/ERC20/ERC20.sol"],
+  },
 };
 
 export default config;
