@@ -37,31 +37,35 @@ describe("path", () => {
   describe("shortenPath", () => {
     it("Should shorten a path that's inside the folder", () => {
       assert.equal(
-        shortenPath(
-          "/home/user/project/contracts/File.sol",
-          "/home/user/project",
+        shortenPath(import.meta.filename, import.meta.dirname),
+        path.basename(import.meta.filename),
+      );
+
+      assert.equal(
+        shortenPath(import.meta.filename, path.dirname(import.meta.dirname)),
+        path.join(
+          path.basename(import.meta.dirname),
+          path.basename(import.meta.filename),
         ),
-        "contracts/File.sol",
       );
 
+      // Test that it works with a path.sep at the end
       assert.equal(
-        shortenPath("/home/user/project/contracts/File.sol", "/home/user"),
-        "project/contracts/File.sol",
-      );
-
-      assert.equal(
-        shortenPath("/home/user/project/contracts/File.sol", "/home/user/"),
-        "project/contracts/File.sol",
+        shortenPath(
+          import.meta.filename,
+          path.dirname(import.meta.dirname) + path.sep,
+        ),
+        path.join(
+          path.basename(import.meta.dirname),
+          path.basename(import.meta.filename),
+        ),
       );
     });
 
     it("Should not shorten a path that's not inside the folder", () => {
       assert.equal(
-        shortenPath(
-          "/home/user/project/contracts/File.sol",
-          "/home/user/project2",
-        ),
-        "/home/user/project/contracts/File.sol",
+        shortenPath(import.meta.filename, import.meta.dirname + "nope"),
+        import.meta.filename,
       );
     });
   });
