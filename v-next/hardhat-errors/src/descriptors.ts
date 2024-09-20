@@ -788,12 +788,32 @@ Please change your remapping to match the installed version, or installed the co
     },
     INVALID_NPM_IMPORT: {
       number: 1013,
-      messageTemplate: `The import "{imporPath}" in "{from}" is treated as an npm import as it's first directory doesn't exist in your project, but it's syntax is not that of a valid npm import either.`,
+      messageTemplate: `The import "{importPath}" in "{from}" is treated as an npm import as it's first directory doesn't exist in your project, but it's syntax is not that of a valid npm import either.`,
       websiteTitle: `Invalid npm import`,
       websiteDescription: `You are trying to import a file that is not a valid npm import. Please double check that you are using the correct syntax.`,
     },
-    INVALID_VERSION: {
+    ILLEGAL_PACKAGE_IMPORT: {
       number: 1014,
+      messageTemplate: `The import "{importPath}" in "{from}" is not a legal import as it's trying to import a file outside of its package.`,
+      websiteTitle: `Illegal package import`,
+      websiteDescription: `One of your npm packages has a Solidity file that is trying to import a file outside of its package using a relative import. This is disabled for security reasons.`,
+    },
+    ILEGALL_PROJECT_IMPORT: {
+      number: 1015,
+      messageTemplate: `The import "{importPath}" in "{from}" is not a legal import as it's trying to import a file outside of the project.`,
+      websiteTitle: `Illegal project import`,
+      websiteDescription: `One of your Solidity files is trying to import a file outside of the Hardhat project using a relative import. This is disabled for security reasons.`,
+    },
+    ILLEGAL_PROJECT_IMPORT_AFTER_REMAPPING: {
+      number: 1016,
+      messageTemplate: `Applying the remapping "{remapping}" to the import "{importPath}" from "{from}" results in an invalid import "{remappedDirectImport}", as it's not a local file. If you are trying to remap into an npm module use the npm/ syntax instead.`,
+      websiteTitle: `Illegal project import after remapping`,
+      websiteDescription: `One of your Solidity files has an import which after applying a user remapping becomes an illegal import, as it tries to import a file outside of the project. This is disabled for security reasons. 
+      
+If you are trying to remap into an npm module use the npm/ syntax instead.`,
+    },
+    INVALID_SOLC_VERSION: {
+      number: 1017,
       messageTemplate: `Solidity version {version} is invalid or hasn't been released yet.
 
 If you are certain it has been released, run "npx hardhat clean --global" and try again`,
@@ -803,7 +823,7 @@ If you are certain it has been released, run "npx hardhat clean --global" and tr
 If you are certain it has been released, run \`npx hardhat clean --global\` and try again.`,
     },
     DOWNLOAD_FAILED: {
-      number: 1015,
+      number: 1018,
       messageTemplate:
         "Couldn't download compiler version {remoteVersion}. Please check your internet connection and try again.",
       websiteTitle: "`solc` download failed",
@@ -812,7 +832,7 @@ If you are certain it has been released, run \`npx hardhat clean --global\` and 
 Please check your internet connection and try again.`,
     },
     VERSION_LIST_DOWNLOAD_FAILED: {
-      number: 1016,
+      number: 1019,
       messageTemplate:
         "Couldn't download compiler version list. Please check your internet connection and try again.",
       websiteTitle: "Couldn't obtain `solc` version list",
@@ -821,7 +841,7 @@ Please check your internet connection and try again.`,
 Please check your internet connection and try again.`,
     },
     INVALID_DOWNLOAD: {
-      number: 1017,
+      number: 1020,
       messageTemplate: `Couldn't download compiler version {remoteVersion}: Checksum verification failed.
 
 Please check your internet connection and try again.
@@ -835,7 +855,7 @@ Please check your internet connection and try again.
 If this error persists, run \`npx hardhat clean --global\`.`,
     },
     CANT_RUN_NATIVE_COMPILER: {
-      number: 1018,
+      number: 1021,
       messageTemplate: `A native version of solc failed to run.
 
 If you are running MacOS, try installing Apple Rosetta.
@@ -849,7 +869,7 @@ If you are running MacOS, try installing Apple Rosetta.
 If this error persists, run "npx hardhat clean --global".`,
     },
     CANT_RUN_SOLCJS_COMPILER: {
-      number: 1019,
+      number: 1022,
       messageTemplate: `A wasm version of solc failed to run.
 
 If this error persists, run "npx hardhat clean --global".`,

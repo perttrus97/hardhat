@@ -251,9 +251,12 @@ export class CompilerDownloaderImplementation implements CompilerDownloader {
     const build = list.builds.find((b) => b.version === version);
 
     if (build === undefined) {
-      throw new HardhatError(HardhatError.ERRORS.SOLIDITY.INVALID_VERSION, {
-        version,
-      });
+      throw new HardhatError(
+        HardhatError.ERRORS.SOLIDITY.INVALID_SOLC_VERSION,
+        {
+          version,
+        },
+      );
     }
 
     return build;

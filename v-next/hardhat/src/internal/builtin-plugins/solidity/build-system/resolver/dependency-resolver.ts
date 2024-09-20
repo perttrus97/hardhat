@@ -268,14 +268,22 @@ export class ResolverImplementation implements Resolver {
 
         if (from.type === ResolvedFileType.NPM_PACKGE_FILE) {
           if (!directImport.startsWith(from.package.rootSourceName)) {
-            throw new Error(
-              `Invalid import ${importPath} from ${this.#shortenPath(from.path)}, trying to import outside of the package`,
+            throw new HardhatError(
+              HardhatError.ERRORS.SOLIDITY.ILLEGAL_PACKAGE_IMPORT,
+              {
+                importPath,
+                from: this.#shortenPath(from.path),
+              },
             );
           }
         } else {
           if (directImport.startsWith("../")) {
-            throw new Error(
-              `Invalid import ${importPath} from ${this.#shortenPath(from.path)}, trying to import outside of the project`,
+            throw new HardhatError(
+              HardhatError.ERRORS.SOLIDITY.ILEGALL_PROJECT_IMPORT,
+              {
+                importPath,
+                from: this.#shortenPath(from.path),
+              },
             );
           }
         }
@@ -441,8 +449,14 @@ export class ResolverImplementation implements Resolver {
           remappedDirectImport,
         ))
       ) {
-        throw new Error(
-          `Applying the remapping "${bestUserRemapping.rawFormat}" to the import ${importPath} from ${this.#shortenPath(from.path)} results in an invalid import ${remappedDirectImport}, as it's not a local files. If you are trying to remap into an npm module use the npm/ syntax instead.`,
+        throw new HardhatError(
+          HardhatError.ERRORS.SOLIDITY.ILLEGAL_PROJECT_IMPORT_AFTER_REMAPPING,
+          {
+            importPath,
+            from: this.#shortenPath(from.path),
+            remapping: bestUserRemapping.rawFormat,
+            remappedDirectImport,
+          },
         );
       }
 
@@ -551,7 +565,10 @@ export class ResolverImplementation implements Resolver {
     const parsedDirectImport = this.#parseNpmDirectImport(directImport);
 
     if (parsedDirectImport === undefined) {
-      throw new Error(`Invalid npm import ${directImport}`);
+      throw new HardhatError(HardhatError.ERRORS.SOLIDITY.INVALID_NPM_IMPORT, {
+        importPath,
+        from: this.#shortenPath(from.path),
+      });
     }
 
     const dependencyMapsKey =
