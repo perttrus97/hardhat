@@ -73,7 +73,7 @@ export const ERROR_CATEGORIES: {
     max: 999,
     websiteTitle: "Network-helpers errors",
   },
-  SOLIDITY: { min: 1000, max: 1099, websiteTitle: "Solidity related errors" },
+  SOLIDITY: { min: 1000, max: 1099, websiteTitle: "Solidity errors" },
 };
 
 export const ERRORS = {
@@ -791,6 +791,74 @@ Please change your remapping to match the installed version, or installed the co
       messageTemplate: `The import "{imporPath}" in "{from}" is treated as an npm import as it's first directory doesn't exist in your project, but it's syntax is not that of a valid npm import either.`,
       websiteTitle: `Invalid npm import`,
       websiteDescription: `You are trying to import a file that is not a valid npm import. Please double check that you are using the correct syntax.`,
+    },
+    INVALID_VERSION: {
+      number: 1014,
+      messageTemplate: `Solidity version {version} is invalid or hasn't been released yet.
+
+If you are certain it has been released, run "npx hardhat clean --global" and try again`,
+      websiteTitle: "Invalid or unreleased `solc` version",
+      websiteDescription: `The Solidity version in your config is invalid or hasn't been released yet.
+
+If you are certain it has been released, run \`npx hardhat clean --global\` and try again.`,
+    },
+    DOWNLOAD_FAILED: {
+      number: 1015,
+      messageTemplate:
+        "Couldn't download compiler version {remoteVersion}. Please check your internet connection and try again.",
+      websiteTitle: "`solc` download failed",
+      websiteDescription: `Couldn't download \`solc\`.
+
+Please check your internet connection and try again.`,
+    },
+    VERSION_LIST_DOWNLOAD_FAILED: {
+      number: 1016,
+      messageTemplate:
+        "Couldn't download compiler version list. Please check your internet connection and try again.",
+      websiteTitle: "Couldn't obtain `solc` version list",
+      websiteDescription: `Couldn't download \`solc\`'s version list.
+
+Please check your internet connection and try again.`,
+    },
+    INVALID_DOWNLOAD: {
+      number: 1017,
+      messageTemplate: `Couldn't download compiler version {remoteVersion}: Checksum verification failed.
+
+Please check your internet connection and try again.
+
+If this error persists, run "npx hardhat clean --global".`,
+      websiteTitle: "Downloaded `solc` checksum verification failed",
+      websiteDescription: `Hardhat downloaded a version of the Solidity compiler, and its checksum verification failed.
+
+Please check your internet connection and try again.
+
+If this error persists, run \`npx hardhat clean --global\`.`,
+    },
+    CANT_RUN_NATIVE_COMPILER: {
+      number: 1018,
+      messageTemplate: `A native version of solc failed to run.
+
+If you are running MacOS, try installing Apple Rosetta.
+
+If this error persists, run "npx hardhat clean --global".`,
+      websiteTitle: "Failed to run native solc",
+      websiteDescription: `Hardhat successfully downloaded a native version of solc but it doesn't run.
+
+If you are running MacOS, try installing Apple Rosetta.
+
+If this error persists, run "npx hardhat clean --global".`,
+    },
+    CANT_RUN_SOLCJS_COMPILER: {
+      number: 1019,
+      messageTemplate: `A wasm version of solc failed to run.
+
+If this error persists, run "npx hardhat clean --global".`,
+      websiteTitle: "Failed to run solcjs",
+      websiteDescription: `Hardhat successfully downloaded a WASM version of solc but it doesn't run.
+
+If you are running MacOS, try installing Apple Rosetta.
+
+If this error persists, run "npx hardhat clean --global".`,
     },
   },
 } as const;
