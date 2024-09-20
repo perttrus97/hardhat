@@ -67,3 +67,19 @@ declare module "../../../types/config.js" {
     solidity: string[];
   }
 }
+
+import "../../../types/hre.js";
+import type { SolidityBuildSystem } from "../../../types/solidity.js";
+
+declare module "../../../types/hre.js" {
+  export interface HardhatRuntimeEnvironment {
+    solidity: SolidityBuildSystem;
+  }
+}
+
+import "../../../types/global-options.js";
+declare module "../../../types/global-options.js" {
+  export interface GlobalOptions {
+    buildProfile: string;
+  }
+}
