@@ -2304,85 +2304,6 @@ importers:
         specifier: ^3.23.8
         version: 3.23.8
 
-  v-next/resolver:
-    dependencies:
-      '@ignored/hardhat-vnext-errors':
-        specifier: workspace:^3.0.0-next.2
-        version: link:../hardhat-errors
-      '@ignored/hardhat-vnext-utils':
-        specifier: workspace:^3.0.0-next.2
-        version: link:../hardhat-utils
-      '@marsraptor/bitset':
-        specifier: ^1.0.0
-        version: 1.0.0
-      '@nomicfoundation/slang':
-        specifier: 0.17.0
-        version: 0.17.0
-    devDependencies:
-      '@eslint-community/eslint-plugin-eslint-comments':
-        specifier: ^4.3.0
-        version: 4.4.0(eslint@8.57.0)
-      '@ignored/hardhat-vnext-node-test-reporter':
-        specifier: workspace:^3.0.0-next.2
-        version: link:../hardhat-node-test-reporter
-      '@nomicfoundation/eslint-plugin-hardhat-internal-rules':
-        specifier: workspace:^
-        version: link:../../packages/eslint-plugin-hardhat-internal-rules
-      '@nomicfoundation/eslint-plugin-slow-imports':
-        specifier: workspace:^
-        version: link:../../packages/eslint-plugin-slow-imports
-      '@nomicfoundation/hardhat-test-utils':
-        specifier: workspace:^
-        version: link:../hardhat-test-utils
-      '@types/node':
-        specifier: ^20.14.9
-        version: 20.16.1
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^7.7.1
-        version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)
-      '@typescript-eslint/parser':
-        specifier: ^7.7.1
-        version: 7.18.0(eslint@8.57.0)(typescript@5.5.4)
-      c8:
-        specifier: ^9.1.0
-        version: 9.1.0
-      eslint:
-        specifier: 8.57.0
-        version: 8.57.0
-      eslint-config-prettier:
-        specifier: 9.1.0
-        version: 9.1.0(eslint@8.57.0)
-      eslint-import-resolver-typescript:
-        specifier: ^3.6.1
-        version: 3.6.3(@typescript-eslint/parser@7.18.0(eslint@8.57.0)(typescript@5.5.4))(eslint-plugin-import@2.29.1)(eslint@8.57.0)
-      eslint-plugin-import:
-        specifier: 2.29.1
-        version: 2.29.1(@typescript-eslint/parser@7.18.0(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.0)
-      eslint-plugin-no-only-tests:
-        specifier: 3.1.0
-        version: 3.1.0
-      expect-type:
-        specifier: ^0.19.0
-        version: 0.19.0
-      nyc:
-        specifier: ^15.1.0
-        version: 15.1.0
-      prettier:
-        specifier: 3.2.5
-        version: 3.2.5
-      rimraf:
-        specifier: ^5.0.5
-        version: 5.0.10
-      tsx:
-        specifier: ^4.11.0
-        version: 4.18.0
-      typescript:
-        specifier: ~5.5.0
-        version: 5.5.4
-      typescript-eslint:
-        specifier: 7.7.1
-        version: 7.7.1(eslint@8.57.0)(typescript@5.5.4)
-
   v-next/template-package:
     devDependencies:
       '@eslint-community/eslint-plugin-eslint-comments':
@@ -2964,9 +2885,6 @@ packages:
   '@manypkg/get-packages@1.1.3':
     resolution: {integrity: sha512-fo+QhuU3qE/2TQMQmbVMqaQ6EWbMhi4ABWP+O4AM1NqPBuy0OrApV5LO6BrrgnhtAHS2NH6RrVk9OL181tTi8A==}
 
-  '@marsraptor/bitset@1.0.0':
-    resolution: {integrity: sha512-NWxL7Agrt9r8Qd3ZO409tYu3GXMB4FijER8I7I7C7NDETGscBiYXVUGrwLqybE0ceWuc0eF1GGxE0pXOL/ZWnw==}
-
   '@metamask/eth-sig-util@4.0.1':
     resolution: {integrity: sha512-tghyZKLHZjcdlDqCA3gNZmLeR0XvOE9U1qoQO9ohyAZT6Pya+H9vkBPcsyXytmYLNgVoin7CKCmweo/R43V+tQ==}
     engines: {node: '>=12.0.0'}
@@ -3105,46 +3023,6 @@ packages:
 
   '@nomicfoundation/ignition-ui@0.15.5':
     resolution: {integrity: sha512-ZcE4rIn10qKahR4OqS8rl8NM2Fbg2QYiBXgMgj74ZI0++LlCcZgB5HyaBbX+lsnKHjTXtjYD3b+2mtg7jFbAMQ==}
-
-  '@nomicfoundation/slang-darwin-arm64@0.17.0':
-    resolution: {integrity: sha512-O0q94EUtoWy9A5kOTOa9/khtxXDYnLqmuda9pQELurSiwbQEVCPQL8kb34VbOW+ifdre66JM/05Xw9JWhIZ9sA==}
-    engines: {node: '>= 10'}
-
-  '@nomicfoundation/slang-darwin-x64@0.17.0':
-    resolution: {integrity: sha512-IaDbHzvT08sBK2HyGzonWhq1uu8IxdjmTqAWHr25Oh/PYnamdi8u4qchZXXYKz/DHLoYN3vIpBXoqLQIomhD/g==}
-    engines: {node: '>= 10'}
-
-  '@nomicfoundation/slang-linux-arm64-gnu@0.17.0':
-    resolution: {integrity: sha512-Lj4anvOsQZxs1SycG8VyT2Rl2oqIhyLSUCgGepTt3CiJ/bM+8r8bLJIgh8vKkki4BWz49YsYIgaJB2IPv8FFTw==}
-    engines: {node: '>= 10'}
-
-  '@nomicfoundation/slang-linux-arm64-musl@0.17.0':
-    resolution: {integrity: sha512-/xkTCa9d5SIWUBQE3BmLqDFfJRr4yUBwbl4ynPiGUpRXrD69cs6pWKkwjwz/FdBpXqVo36I+zY95qzoTj/YhOA==}
-    engines: {node: '>= 10'}
-
-  '@nomicfoundation/slang-linux-x64-gnu@0.17.0':
-    resolution: {integrity: sha512-oe5IO5vntOqYvTd67deCHPIWuSuWm6aYtT2/0Kqz2/VLtGz4ClEulBSRwfnNzBVtw2nksWipE1w8BzhImI7Syg==}
-    engines: {node: '>= 10'}
-
-  '@nomicfoundation/slang-linux-x64-musl@0.17.0':
-    resolution: {integrity: sha512-PpYCI5K/kgLAMXaPY0V4VST5gCDprEOh7z/47tbI8kJQumI5odjsj/Cs8MpTo7/uRH6flKYbVNgUzcocWVYrAQ==}
-    engines: {node: '>= 10'}
-
-  '@nomicfoundation/slang-win32-arm64-msvc@0.17.0':
-    resolution: {integrity: sha512-u/Mkf7OjokdBilP7QOJj6QYJU4/mjkbKnTX21wLyCIzeVWS7yafRPYpBycKIBj2pRRZ6ceAY5EqRpb0aiCq+0Q==}
-    engines: {node: '>= 10'}
-
-  '@nomicfoundation/slang-win32-ia32-msvc@0.17.0':
-    resolution: {integrity: sha512-XJBVQfNnZQUv0tP2JSJ573S+pmgrLWgqSZOGaMllnB/TL1gRci4Z7dYRJUF2s82GlRJE+FHSI2Ro6JISKmlXCg==}
-    engines: {node: '>= 10'}
-
-  '@nomicfoundation/slang-win32-x64-msvc@0.17.0':
-    resolution: {integrity: sha512-zPGsAeiTfqfPNYHD8BfrahQmYzA78ZraoHKTGraq/1xwJwzBK4bu/NtvVA4pJjBV+B4L6DCxVhSbpn40q26JQA==}
-    engines: {node: '>= 10'}
-
-  '@nomicfoundation/slang@0.17.0':
-    resolution: {integrity: sha512-1GlkGRcGpVnjFw9Z1vvDKOKo2mzparFt7qrl2pDxWp+jrVtlvej98yCMX52pVyrYE7ZeOSZFnx/DtsSgoukStQ==}
-    engines: {node: '>= 10'}
 
   '@nomicfoundation/solidity-analyzer-darwin-arm64@0.1.2':
     resolution: {integrity: sha512-JaqcWPDZENCvm++lFFGjrDd8mxtf+CtLd2MiXvMNTBD33dContTZ9TWETwNFwg7JTJT5Q9HEecH7FA+HTSsIUw==}
@@ -7657,8 +7535,6 @@ snapshots:
       globby: 11.1.0
       read-yaml-file: 1.1.0
 
-  '@marsraptor/bitset@1.0.0': {}
-
   '@metamask/eth-sig-util@4.0.1':
     dependencies:
       ethereumjs-abi: 0.6.8
@@ -7815,36 +7691,6 @@ snapshots:
       - utf-8-validate
 
   '@nomicfoundation/ignition-ui@0.15.5': {}
-
-  '@nomicfoundation/slang-darwin-arm64@0.17.0': {}
-
-  '@nomicfoundation/slang-darwin-x64@0.17.0': {}
-
-  '@nomicfoundation/slang-linux-arm64-gnu@0.17.0': {}
-
-  '@nomicfoundation/slang-linux-arm64-musl@0.17.0': {}
-
-  '@nomicfoundation/slang-linux-x64-gnu@0.17.0': {}
-
-  '@nomicfoundation/slang-linux-x64-musl@0.17.0': {}
-
-  '@nomicfoundation/slang-win32-arm64-msvc@0.17.0': {}
-
-  '@nomicfoundation/slang-win32-ia32-msvc@0.17.0': {}
-
-  '@nomicfoundation/slang-win32-x64-msvc@0.17.0': {}
-
-  '@nomicfoundation/slang@0.17.0':
-    dependencies:
-      '@nomicfoundation/slang-darwin-arm64': 0.17.0
-      '@nomicfoundation/slang-darwin-x64': 0.17.0
-      '@nomicfoundation/slang-linux-arm64-gnu': 0.17.0
-      '@nomicfoundation/slang-linux-arm64-musl': 0.17.0
-      '@nomicfoundation/slang-linux-x64-gnu': 0.17.0
-      '@nomicfoundation/slang-linux-x64-musl': 0.17.0
-      '@nomicfoundation/slang-win32-arm64-msvc': 0.17.0
-      '@nomicfoundation/slang-win32-ia32-msvc': 0.17.0
-      '@nomicfoundation/slang-win32-x64-msvc': 0.17.0
 
   '@nomicfoundation/solidity-analyzer-darwin-arm64@0.1.2':
     optional: true
