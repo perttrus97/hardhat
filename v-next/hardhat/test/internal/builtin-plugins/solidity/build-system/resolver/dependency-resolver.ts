@@ -207,7 +207,10 @@ describe("Resolver", () => {
               await assertRejectsWithHardhatError(
                 resolver.resolveImport(contractsFileSol, "./nope.sol"),
                 HardhatError.ERRORS.SOLIDITY.IMPORTED_FILE_DOESNT_EXIST,
-                { importPath: "./nope.sol", from: "contracts/File.sol" },
+                {
+                  importPath: "./nope.sol",
+                  from: path.join("contracts", "File.sol"),
+                },
               );
 
               await assertRejectsWithHardhatError(
@@ -215,7 +218,7 @@ describe("Resolver", () => {
                 HardhatError.ERRORS.SOLIDITY.IMPORTED_FILE_WITH_ICORRECT_CASING,
                 {
                   importPath: "../file.sol",
-                  from: "contracts/File.sol",
+                  from: path.join("contracts", "File.sol"),
                   correctCasing: "File.sol",
                 },
               );
@@ -264,7 +267,7 @@ describe("Resolver", () => {
                 HardhatError.ERRORS.SOLIDITY.IMPORTED_FILE_DOESNT_EXIST,
                 {
                   importPath: "contracts/nope.sol",
-                  from: "contracts/File.sol",
+                  from: path.join("contracts", "File.sol"),
                 },
               );
 
@@ -273,7 +276,7 @@ describe("Resolver", () => {
                 HardhatError.ERRORS.SOLIDITY.IMPORTED_FILE_WITH_ICORRECT_CASING,
                 {
                   importPath: "contracts/file2.sol",
-                  from: "contracts/File.sol",
+                  from: path.join("contracts", "File.sol"),
                   correctCasing: "contracts/File2.sol",
                 },
               );
@@ -292,7 +295,7 @@ describe("Resolver", () => {
                 HardhatError.ERRORS.SOLIDITY.IMPORTED_FILE_DOESNT_EXIST,
                 {
                   importPath: "nope.sol",
-                  from: "contracts/File.sol",
+                  from: path.join("contracts", "File.sol"),
                 },
               );
 
@@ -313,7 +316,7 @@ describe("Resolver", () => {
                 HardhatError.ERRORS.SOLIDITY.IMPORTED_FILE_DOESNT_EXIST,
                 {
                   importPath: "npm/nope.sol",
-                  from: "contracts/File.sol",
+                  from: path.join("contracts", "File.sol"),
                 },
               );
 
@@ -365,7 +368,7 @@ describe("Resolver", () => {
               HardhatError.ERRORS.SOLIDITY
                 .IMPORTED_NPM_DEPENDENCY_NOT_INSTALLED,
               {
-                from: "contracts/File.sol",
+                from: path.join("contracts", "File.sol"),
                 importPath: "uninstalled-package/File.sol",
               },
             );
@@ -377,7 +380,7 @@ describe("Resolver", () => {
               HardhatError.ERRORS.SOLIDITY
                 .IMPORTED_NPM_DEPENDENCY_THAT_USES_EXPORTS,
               {
-                from: "contracts/File.sol",
+                from: path.join("contracts", "File.sol"),
                 importPath: "exports/File.sol",
               },
             );
@@ -388,7 +391,7 @@ describe("Resolver", () => {
               resolver.resolveImport(contractsFileSol, "dependency/nope.sol"),
               HardhatError.ERRORS.SOLIDITY.IMPORTED_FILE_DOESNT_EXIST,
               {
-                from: "contracts/File.sol",
+                from: path.join("contracts", "File.sol"),
                 importPath: "dependency/nope.sol",
               },
             );
@@ -397,7 +400,7 @@ describe("Resolver", () => {
               resolver.resolveImport(contractsFileSol, "dependency/file.sol"),
               HardhatError.ERRORS.SOLIDITY.IMPORTED_FILE_WITH_ICORRECT_CASING,
               {
-                from: "contracts/File.sol",
+                from: path.join("contracts", "File.sol"),
                 importPath: "dependency/file.sol",
                 correctCasing: "File.sol",
               },
@@ -552,7 +555,7 @@ describe("Resolver", () => {
                 HardhatError.ERRORS.SOLIDITY
                   .IMPORTED_NPM_DEPENDENCY_NOT_INSTALLED,
                 {
-                  from: "contracts/File.sol",
+                  from: path.join("contracts", "File.sol"),
                   importPath: "real-name/contracts/File.sol",
                 },
               );
