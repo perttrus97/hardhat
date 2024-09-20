@@ -22,8 +22,8 @@ import {
   readJsonFile,
   readUtf8File,
 } from "@ignored/hardhat-vnext-utils/fs";
+import { ResolutionError, resolve } from "@ignored/hardhat-vnext-utils/resolve";
 
-import { ResolutionError, resolve } from "./node-resolution.js";
 import {
   applyValidRemapping,
   parseRemappingString,
@@ -521,22 +521,22 @@ export class ResolverImplementation implements Resolver {
           ? this.#projectRoot
           : from.package.rootPath;
 
-      const packageJsonResolution = resolve({
-        from: baseResolutionDirectory,
-        toResolve: parsedDirectImport.package + "/package.json",
-      });
+      const packageJsonResolution = resolve(
+        parsedDirectImport.package + "/package.json",
+        baseResolutionDirectory,
+      );
 
-      if (packageJsonResolution === ResolutionError.MODULE_NOT_FOUND) {
-        throw new HardhatError(
-          HardhatError.ERRORS.SOLIDITY.IMPORTED_NPM_DEPENDENCY_NOT_INSTALLED,
-          {
-            from: this.#userFriendlyPath(from.path),
-            importPath,
-          },
-        );
-      }
+      if (packageJsonResolution.success === false) {
+        if (packageJsonResolution.error === ResolutionError.MODULE_NOT_FOUND) {
+          throw new HardhatError(
+            HardhatError.ERRORS.SOLIDITY.IMPORTED_NPM_DEPENDENCY_NOT_INSTALLED,
+            {
+              from: this.#userFriendlyPath(from.path),
+              importPath,
+            },
+          );
+        }
 
-      if (packageJsonResolution === ResolutionError.NOT_EXPORTED) {
         throw new HardhatError(
           HardhatError.ERRORS.SOLIDITY.IMPORTED_NPM_DEPENDENCY_THAT_USES_EXPORTS,
           { from: this.#userFriendlyPath(from.path), importPath },
@@ -1051,19 +1051,21 @@ async function validateAndResolveUserRemapping(
 
   const { packageName, packageVersion } = parsed;
 
-  const dependencyPackageJsonResolution = resolve({
-    from: projectRoot,
-    toResolve: `${packageName}/package.json`,
-  });
+  const dependencyPackageJsonResolution = resolve(
+    `${packageName}/package.json`,
+    projectRoot,
+  );
 
-  if (dependencyPackageJsonResolution === ResolutionError.MODULE_NOT_FOUND) {
-    throw new HardhatError(
-      HardhatError.ERRORS.SOLIDITY.REMAPPING_TO_UNINSTALLED_PACKAGE,
-      { remapping: remappingString, package: packageName },
-    );
-  }
+  if (dependencyPackageJsonResolution.success === false) {
+    if (
+      dependencyPackageJsonResolution.error === ResolutionError.MODULE_NOT_FOUND
+    ) {
+      throw new HardhatError(
+        HardhatError.ERRORS.SOLIDITY.REMAPPING_TO_UNINSTALLED_PACKAGE,
+        { remapping: remappingString, package: packageName },
+      );
+    }
 
-  if (dependencyPackageJsonResolution === ResolutionError.NOT_EXPORTED) {
     throw new HardhatError(
       HardhatError.ERRORS.SOLIDITY.REMAPPING_TO_PACKAGE_USING_EXPORTS,
       { remapping: remappingString, package: packageName },
