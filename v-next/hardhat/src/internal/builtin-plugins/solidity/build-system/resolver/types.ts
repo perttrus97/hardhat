@@ -20,10 +20,12 @@ export interface ResolvedNpmPackage {
   /**
    * The prefix that represents the source name of the package's files.
    *
-   * For example, 'npm/foo@1.2.3' would have a root source name of the npm
-   * package 'foo' with version '1.2.3'.
+   * For example, package 'foo' with version '1.2.3' would have a root source
+   * name of 'npm/foo@1.2.3/'. If the package is part of the monorepo, the root
+   * source name would be 'npm/package@local/'.
    *
-   * TODO: This can be derived from the rest of the fields.
+   * Note that this can be derived from the rest of the fields, but it's
+   * cached here for performance reasons.
    */
   rootSourceName: string;
 }
