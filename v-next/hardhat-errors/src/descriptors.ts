@@ -812,8 +812,14 @@ Please change your remapping to match the installed version, or installed the co
       
 If you are trying to remap into an npm module use the npm/ syntax instead.`,
     },
-    INVALID_SOLC_VERSION: {
+    IMPORT_PATH_WITH_WINDOWS_SEPARATOR: {
       number: 1017,
+      messageTemplate: `The import "{importPath}" in "{from}" is not a valid import as it contains a Windows path separator.`,
+      websiteTitle: `Import path with Windows path separator`,
+      websiteDescription: `One of your Solidity files is trying to import a file with a Windows path separator, and this is not supported. Please use a Unix-style path instead.`,
+    },
+    INVALID_SOLC_VERSION: {
+      number: 1018,
       messageTemplate: `Solidity version {version} is invalid or hasn't been released yet.
 
 If you are certain it has been released, run "npx hardhat clean --global" and try again`,
@@ -823,7 +829,7 @@ If you are certain it has been released, run "npx hardhat clean --global" and tr
 If you are certain it has been released, run \`npx hardhat clean --global\` and try again.`,
     },
     DOWNLOAD_FAILED: {
-      number: 1018,
+      number: 1019,
       messageTemplate:
         "Couldn't download compiler version {remoteVersion}. Please check your internet connection and try again.",
       websiteTitle: "`solc` download failed",
@@ -832,7 +838,7 @@ If you are certain it has been released, run \`npx hardhat clean --global\` and 
 Please check your internet connection and try again.`,
     },
     VERSION_LIST_DOWNLOAD_FAILED: {
-      number: 1019,
+      number: 1020,
       messageTemplate:
         "Couldn't download compiler version list. Please check your internet connection and try again.",
       websiteTitle: "Couldn't obtain `solc` version list",
@@ -841,7 +847,7 @@ Please check your internet connection and try again.`,
 Please check your internet connection and try again.`,
     },
     INVALID_DOWNLOAD: {
-      number: 1020,
+      number: 1021,
       messageTemplate: `Couldn't download compiler version {remoteVersion}: Checksum verification failed.
 
 Please check your internet connection and try again.
@@ -855,7 +861,7 @@ Please check your internet connection and try again.
 If this error persists, run \`npx hardhat clean --global\`.`,
     },
     CANT_RUN_NATIVE_COMPILER: {
-      number: 1021,
+      number: 1022,
       messageTemplate: `A native version of solc failed to run.
 
 If you are running MacOS, try installing Apple Rosetta.
@@ -869,7 +875,7 @@ If you are running MacOS, try installing Apple Rosetta.
 If this error persists, run "npx hardhat clean --global".`,
     },
     CANT_RUN_SOLCJS_COMPILER: {
-      number: 1022,
+      number: 1023,
       messageTemplate: `A wasm version of solc failed to run.
 
 If this error persists, run "npx hardhat clean --global".`,

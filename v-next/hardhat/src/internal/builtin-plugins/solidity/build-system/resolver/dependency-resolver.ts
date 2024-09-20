@@ -66,9 +66,6 @@ import { ResolvedFileType } from "./types.js";
 //  - Direct local improts within npm package are always remapped by the
 //    resolver.
 
-// TODO: Windows and source names with \ instead of /
-// TODO: Forbid local direct imports to `npm/...`, and local files in `npm/`
-
 /**
  * A user remapping, parsed, and with its npm package resolved, if any.
  */
@@ -193,7 +190,7 @@ export class ResolverImplementation implements Resolver {
       //
       // However, as most of the time these absolute paths are read from the file
       // system, they'd have the right casing in general.
-      let sourceName = relativeFilePath;
+      let sourceName = normalizePathSeparator(relativeFilePath);
       const cached = this.#resolvedFileBySourceName.get(sourceName);
 
       if (cached !== undefined) {
@@ -219,7 +216,7 @@ export class ResolverImplementation implements Resolver {
       }
 
       // Now that we have the correct casing, we "fix" the source name.
-      sourceName = trueCasePath;
+      sourceName = normalizePathSeparator(trueCasePath);
 
       // Maybe it was already resolved, so we need to check with the right
       // casing
@@ -262,6 +259,16 @@ export class ResolverImplementation implements Resolver {
   ): Promise<ResolvedFile> {
     return this.#mutex.exclusiveRun(async () => {
       let directImport = importPath;
+
+      if (path.sep !== "/" && importPath.includes(path.sep)) {
+        throw new HardhatError(
+          HardhatError.ERRORS.SOLIDITY.IMPORT_PATH_WITH_WINDOWS_SEPARATOR,
+          {
+            importPath,
+            from: this.#shortenPath(from.path),
+          },
+        );
+      }
 
       if (importPath.startsWith("./") || importPath.startsWith("../")) {
         directImport = path.join(path.dirname(from.sourceName), importPath);
@@ -704,7 +711,7 @@ export class ResolverImplementation implements Resolver {
     importPath: string;
     pathWithinTheProject: string;
   }): Promise<ProjectResolvedFile> {
-    const sourceName = pathWithinTheProject;
+    const sourceName = normalizePathSeparator(pathWithinTheProject);
     const cached = this.#resolvedFileBySourceName.get(sourceName);
     if (cached !== undefined) {
       /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions --
@@ -930,7 +937,9 @@ export class ResolverImplementation implements Resolver {
     importedPackage: ResolvedNpmPackage;
     pathWithinThePackage: string;
   }): Promise<NpmPackageResolvedFile> {
-    const sourceName = importedPackage.rootSourceName + pathWithinThePackage;
+    const sourceName =
+      importedPackage.rootSourceName +
+      normalizePathSeparator(pathWithinThePackage);
     const cached = this.#resolvedFileBySourceName.get(sourceName);
     if (cached !== undefined) {
       /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions --
@@ -983,7 +992,7 @@ export class ResolverImplementation implements Resolver {
 
     const firstDirectory = directImport.substring(0, slash);
 
-    // TODO: Cache this
+    // TODO: Cache this?
     return exists(path.join(projectOrPackageRoot, firstDirectory));
   }
 
@@ -1256,4 +1265,16 @@ function isPackageJsonFromProject(
 
 function isPackageJsonFromNpmPackage(packageJsonPath: string): boolean {
   return packageJsonPath.includes("node_modules");
+}
+
+/**
+ * Normalizes the path separator of `pathToNormalize` to the use `/` in
+ * platforms where path.sep is not `/`.
+ */
+function normalizePathSeparator(pathToNormalize: string): string {
+  if (path.sep !== "/") {
+    return pathToNormalize;
+  }
+
+  return pathToNormalize.replace(/\\/g, "/");
 }
