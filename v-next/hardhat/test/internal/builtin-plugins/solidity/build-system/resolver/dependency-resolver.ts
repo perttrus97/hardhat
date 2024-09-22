@@ -14,7 +14,7 @@ import { HardhatError } from "@ignored/hardhat-vnext-errors";
 import { assertRejectsWithHardhatError } from "@nomicfoundation/hardhat-test-utils";
 
 import {
-  normalizePathSeparator,
+  fsPathToImportPath,
   ResolverImplementation,
 } from "../../../../../../src/internal/builtin-plugins/solidity/build-system/resolver/dependency-resolver.js";
 import { ResolvedFileType } from "../../../../../../src/internal/builtin-plugins/solidity/build-system/resolver/types.js";
@@ -36,7 +36,7 @@ function assertResolvedProjectFile(
   );
   assert.equal(
     resolvedFile.sourceName,
-    normalizePathSeparator(pathFromProjectRoot),
+    fsPathToImportPath(pathFromProjectRoot),
   );
   assert.equal(
     resolvedFile.path,
@@ -48,7 +48,12 @@ function assertResolvedProjectFile(
     resolvedFile.path,
   );
 
-  assert.equal(resolvedFile.content, pathFromTestFixturesRoot + "\n");
+  // Just as a way to validate which file we are reading the contents from
+  // we wrote their relative unix-style relative path from the fixture root
+  assert.equal(
+    resolvedFile.content,
+    fsPathToImportPath(pathFromTestFixturesRoot) + "\n",
+  );
 }
 
 function assertNpmPackageResolvedFile(
@@ -78,14 +83,19 @@ function assertNpmPackageResolvedFile(
   });
   assert.equal(
     resolvedFile.sourceName,
-    pacakge.rootSourceName + normalizePathSeparator(filePathFromPackageRoot),
+    pacakge.rootSourceName + fsPathToImportPath(filePathFromPackageRoot),
   );
   assert.equal(
     resolvedFile.path,
     path.join(TEST_FIXTURES_ROOT, filePathFromTestFixturesRoot),
   );
 
-  assert.equal(resolvedFile.content, filePathFromTestFixturesRoot + "\n");
+  // Just as a way to validate which file we are reading the contents from
+  // we wrote their relative unix-style relative path from the fixture root
+  assert.equal(
+    resolvedFile.content,
+    fsPathToImportPath(filePathFromTestFixturesRoot) + "\n",
+  );
 }
 
 describe("Resolver", () => {
