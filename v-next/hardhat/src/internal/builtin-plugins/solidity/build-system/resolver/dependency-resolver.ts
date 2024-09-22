@@ -234,7 +234,7 @@ export class ResolverImplementation implements Resolver {
       const resolvedFile: ProjectResolvedFile = {
         type: ResolvedFileType.PROJECT_FILE,
         sourceName,
-        path: pathWithTheRightCasing,
+        fsPath: pathWithTheRightCasing,
         content: await readUtf8File(pathWithTheRightCasing),
       };
 
@@ -528,7 +528,9 @@ export class ResolverImplementation implements Resolver {
     // As we allow this imports in the local project files, we should also allow
     // them on npm packages. If we don't projects won't be easily distributable
     // through npm, even if they don't use remappings.
-    if (await this.#isDirectImportLocal(from.package.rootPath, directImport)) {
+    if (
+      await this.#isDirectImportLocal(from.package.rootFsPath, directImport)
+    ) {
       const resolvedFile = await this.#resolveLocalImportFromNpmPackage({
         from,
         importPath,
@@ -613,7 +615,7 @@ export class ResolverImplementation implements Resolver {
       const baseResolutionDirectory =
         from.type === ResolvedFileType.PROJECT_FILE
           ? this.#projectRoot
-          : from.package.rootPath;
+          : from.package.rootFsPath;
 
       const packageJsonResolution = resolve(
         parsedDirectImport.package + "/package.json",
@@ -657,7 +659,7 @@ export class ResolverImplementation implements Resolver {
         const npmPackage: ResolvedNpmPackage = {
           name,
           version,
-          rootPath: path.dirname(packageJsonPath),
+          rootFsPath: path.dirname(packageJsonPath),
           rootSourceName: npmPackageToRootSourceName(name, version),
         };
 
@@ -747,7 +749,7 @@ export class ResolverImplementation implements Resolver {
     const resolvedFile: ProjectResolvedFile = {
       type: ResolvedFileType.PROJECT_FILE,
       sourceName,
-      path: filePath,
+      fsPath: filePath,
       content: await readUtf8File(filePath),
     };
 
@@ -798,18 +800,18 @@ export class ResolverImplementation implements Resolver {
       from,
       importPath,
       relativePathToValidate: relativeFilePath,
-      absolutePathToValidateFrom: remapping.targetNpmPackage.rootPath,
+      absolutePathToValidateFrom: remapping.targetNpmPackage.rootFsPath,
     });
 
     const filePath = path.join(
-      remapping.targetNpmPackage.rootPath,
+      remapping.targetNpmPackage.rootFsPath,
       relativeFilePath,
     );
 
     const resolvedFile: NpmPackageResolvedFile = {
       type: ResolvedFileType.NPM_PACKGE_FILE,
       sourceName,
-      path: filePath,
+      fsPath: filePath,
       content: await readUtf8File(filePath),
       package: remapping.targetNpmPackage,
     };
@@ -854,15 +856,15 @@ export class ResolverImplementation implements Resolver {
       from,
       importPath,
       relativePathToValidate: relativePath,
-      absolutePathToValidateFrom: from.package.rootPath,
+      absolutePathToValidateFrom: from.package.rootFsPath,
     });
 
-    const filePath = path.join(from.package.rootPath, relativePath);
+    const filePath = path.join(from.package.rootFsPath, relativePath);
 
     const resolvedFile: NpmPackageResolvedFile = {
       type: ResolvedFileType.NPM_PACKGE_FILE,
       sourceName,
-      path: filePath,
+      fsPath: filePath,
       content: await readUtf8File(filePath),
       package: from.package,
     };
@@ -903,15 +905,15 @@ export class ResolverImplementation implements Resolver {
       from,
       importPath,
       relativePathToValidate: fsPathToSourceNamePath(directImport),
-      absolutePathToValidateFrom: from.package.rootPath,
+      absolutePathToValidateFrom: from.package.rootFsPath,
     });
 
-    const filePath = path.join(from.package.rootPath, directImport);
+    const filePath = path.join(from.package.rootFsPath, directImport);
 
     const resolvedFile: NpmPackageResolvedFile = {
       type: ResolvedFileType.NPM_PACKGE_FILE,
       sourceName,
-      path: filePath,
+      fsPath: filePath,
       content: await readUtf8File(filePath),
       package: from.package,
     };
@@ -957,15 +959,18 @@ export class ResolverImplementation implements Resolver {
       from,
       importPath,
       relativePathToValidate: pathWithinThePackage,
-      absolutePathToValidateFrom: importedPackage.rootPath,
+      absolutePathToValidateFrom: importedPackage.rootFsPath,
     });
 
-    const filePath = path.join(importedPackage.rootPath, pathWithinThePackage);
+    const filePath = path.join(
+      importedPackage.rootFsPath,
+      pathWithinThePackage,
+    );
 
     const resolvedFile: NpmPackageResolvedFile = {
       type: ResolvedFileType.NPM_PACKGE_FILE,
       sourceName,
-      path: filePath,
+      fsPath: filePath,
       content: await readUtf8File(filePath),
       package: importedPackage,
     };
@@ -1204,7 +1209,7 @@ async function validateAndResolveUserRemapping(
   const npmPackage: ResolvedNpmPackage = {
     name: packageName,
     version: packageVersion,
-    rootPath: path.dirname(dependencyPackageJsonPath),
+    rootFsPath: path.dirname(dependencyPackageJsonPath),
     rootSourceName: npmPackageToRootSourceName(packageName, packageVersion),
   };
 

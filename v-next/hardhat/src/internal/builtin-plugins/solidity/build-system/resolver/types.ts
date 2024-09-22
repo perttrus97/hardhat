@@ -15,7 +15,7 @@ export interface ResolvedNpmPackage {
   /**
    * The path to the package's root directory.
    */
-  rootPath: string;
+  rootFsPath: string;
 
   /**
    * The prefix that represents the source name of the package's files.
@@ -48,10 +48,11 @@ export interface ProjectResolvedFile {
    * project root.
    */
   sourceName: string;
+
   /**
    * The absolute path to the file.
    */
-  path: string;
+  fsPath: string;
 
   /**
    * The file contents.
@@ -73,7 +74,7 @@ export interface NpmPackageResolvedFile {
   /**
    * The absolute path to the file.
    */
-  path: string;
+  fsPath: string;
 
   /**
    * The file contents.

@@ -32,20 +32,20 @@ function assertResolvedProjectFile(
 ): asserts resolvedFile is ProjectResolvedFile {
   assert.ok(
     resolvedFile.type === ResolvedFileType.PROJECT_FILE,
-    `Resolved file ${resolvedFile.path} is not a project file`,
+    `Resolved file ${resolvedFile.fsPath} is not a project file`,
   );
   assert.equal(
     resolvedFile.sourceName,
     fsPathToSourceNamePath(pathFromProjectRoot),
   );
   assert.equal(
-    resolvedFile.path,
+    resolvedFile.fsPath,
     path.resolve(FIXTURE_HARDHAT_PROJECT_ROOT, pathFromProjectRoot),
   );
 
   const pathFromTestFixturesRoot = path.relative(
     TEST_FIXTURES_ROOT,
-    resolvedFile.path,
+    resolvedFile.fsPath,
   );
 
   // Just as a way to validate which file we are reading the contents from
@@ -58,13 +58,13 @@ function assertResolvedProjectFile(
 
 function assertNpmPackageResolvedFile(
   resolvedFile: ResolvedFile,
-  pacakge: Omit<ResolvedNpmPackage, "rootPath">,
+  pacakge: Omit<ResolvedNpmPackage, "rootFsPath">,
   packagePathFromTestFixturesRoot: string,
   filePathFromPackageRoot: string,
 ): asserts resolvedFile is NpmPackageResolvedFile {
   assert.ok(
     resolvedFile.type === ResolvedFileType.NPM_PACKGE_FILE,
-    `Resolved file ${resolvedFile.path} is not an npm file`,
+    `Resolved file ${resolvedFile.fsPath} is not an npm file`,
   );
 
   const filePathFromTestFixturesRoot = path.join(
@@ -79,14 +79,14 @@ function assertNpmPackageResolvedFile(
 
   assert.deepEqual(resolvedFile.package, {
     ...pacakge,
-    rootPath: packageRootPath,
+    rootFsPath: packageRootPath,
   });
   assert.equal(
     resolvedFile.sourceName,
     pacakge.rootSourceName + fsPathToSourceNamePath(filePathFromPackageRoot),
   );
   assert.equal(
-    resolvedFile.path,
+    resolvedFile.fsPath,
     path.join(TEST_FIXTURES_ROOT, filePathFromTestFixturesRoot),
   );
 
