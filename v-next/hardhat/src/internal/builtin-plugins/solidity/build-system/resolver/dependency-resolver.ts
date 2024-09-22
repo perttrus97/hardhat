@@ -77,9 +77,9 @@ interface ResolvedUserRemapping {
 }
 
 /**
- * A sentinel value that represents the root source name of the Hardhat project.
+ * A sentinel value that represents the root of the Hardhat project.
  */
-const PROJECT_ROOT_SOURCE_NAME_SENTINEL: unique symbol = Symbol();
+const PROJECT_ROOT_SENTINEL: unique symbol = Symbol();
 
 export class ResolverImplementation implements Resolver {
   readonly #projectRoot: string;
@@ -99,18 +99,17 @@ export class ResolverImplementation implements Resolver {
    * This is more complex than you may expect, as we have to handle:
    *
    *   - The Hardhat project itself, which is treated differently than npm
-   *     packages, and is represented by the value
-   *     `PROJECT_ROOT_SOURCE_NAME_SENTINEL`.
+   *     packages, and is represented by the value `PROJECT_ROOT_SENTINEL`.
    *   - The case where a package is installed with a different name than the
    *     package's name in its `package.json`. We refer to the name with which
    *     the package is installed as the "installation name".
    *   - Imports from monorepo packages into the Hardhat project.
    */
   readonly #dependencyMaps: Map<
-    ResolvedNpmPackage | typeof PROJECT_ROOT_SOURCE_NAME_SENTINEL,
+    ResolvedNpmPackage | typeof PROJECT_ROOT_SENTINEL,
     Map<
       string, // The installation-name of the package that is being imported
-      ResolvedNpmPackage | typeof PROJECT_ROOT_SOURCE_NAME_SENTINEL // The package imported with that name
+      ResolvedNpmPackage | typeof PROJECT_ROOT_SENTINEL // The package imported with that name
     >
   > = new Map();
 
@@ -158,7 +157,7 @@ export class ResolverImplementation implements Resolver {
   ) {
     this.#projectRoot = projectRoot;
     this.#userRemappings = userRemappings;
-    this.#dependencyMaps.set(PROJECT_ROOT_SOURCE_NAME_SENTINEL, new Map());
+    this.#dependencyMaps.set(PROJECT_ROOT_SENTINEL, new Map());
   }
 
   public async resolveProjectFile(
@@ -199,9 +198,9 @@ export class ResolverImplementation implements Resolver {
         return cached as ProjectResolvedFile;
       }
 
-      let trueCasePath: string;
+      let trueCaseFsPath: string;
       try {
-        trueCasePath = await getFileTrueCase(
+        trueCaseFsPath = await getFileTrueCase(
           this.#projectRoot,
           relativeFilePath,
         );
@@ -216,7 +215,7 @@ export class ResolverImplementation implements Resolver {
       }
 
       // Now that we have the correct casing, we "fix" the source name.
-      sourceName = fsPathToSourceNamePath(trueCasePath);
+      sourceName = fsPathToSourceNamePath(trueCaseFsPath);
 
       // Maybe it was already resolved, so we need to check with the right
       // casing
@@ -228,14 +227,16 @@ export class ResolverImplementation implements Resolver {
         return resolvedWithTheRightCasing as ProjectResolvedFile;
       }
 
-      // If this wasn't
-      const pathWithTheRightCasing = path.join(this.#projectRoot, trueCasePath);
+      const fsPathWithTheRightCasing = path.join(
+        this.#projectRoot,
+        trueCaseFsPath,
+      );
 
       const resolvedFile: ProjectResolvedFile = {
         type: ResolvedFileType.PROJECT_FILE,
         sourceName,
-        fsPath: pathWithTheRightCasing,
-        content: await readUtf8File(pathWithTheRightCasing),
+        fsPath: fsPathWithTheRightCasing,
+        content: await readUtf8File(fsPathWithTheRightCasing),
       };
 
       this.#resolvedFileBySourceName.set(sourceName, resolvedFile);
@@ -332,7 +333,7 @@ export class ResolverImplementation implements Resolver {
     ] of this.#dependencyMaps.entries()) {
       let context: string;
 
-      if (thePackage === PROJECT_ROOT_SOURCE_NAME_SENTINEL) {
+      if (thePackage === PROJECT_ROOT_SENTINEL) {
         context = "";
       } else {
         context = thePackage.rootSourceName;
@@ -345,7 +346,7 @@ export class ResolverImplementation implements Resolver {
         // We should revisit this if we exported more solidity files in the
         // hardhat package in the future.
         if (
-          dependency !== PROJECT_ROOT_SOURCE_NAME_SENTINEL &&
+          dependency !== PROJECT_ROOT_SENTINEL &&
           dependency.name === "hardhat"
         ) {
           const prefix = importedPackage + "/console.sol";
@@ -356,7 +357,7 @@ export class ResolverImplementation implements Resolver {
           const prefix = importedPackage + "/";
 
           const target =
-            dependency === PROJECT_ROOT_SOURCE_NAME_SENTINEL
+            dependency === PROJECT_ROOT_SENTINEL
               ? ""
               : dependency.rootSourceName;
 
@@ -396,7 +397,7 @@ export class ResolverImplementation implements Resolver {
   //
   // These techniques are:
   //  1. Resolving an import to a project file
-  //  2. Resolving an import to an npm package remapped by the user
+  //  2. Resolving an import remapped by the user into an npm package
   //  3. Resolving an import from an npm package to one of its own files with a
   //     relative import
   //  4. Resolving an import from an npm package to one of its own files with a
@@ -431,49 +432,11 @@ export class ResolverImplementation implements Resolver {
     );
 
     if (bestUserRemapping !== undefined) {
-      const remappedDirectImport = applyValidRemapping(
-        directImport,
-        bestUserRemapping,
-      );
-
-      // Special case, where a user remapping's target is an npm pacakge
-      if (bestUserRemapping.targetNpmPackage !== undefined) {
-        // This weird syntax is because TS doesn't realize that
-        // bestUserRemapping is Required<UserRemapping> here
-        const remapping: Required<ResolvedUserRemapping> = {
-          ...bestUserRemapping,
-          targetNpmPackage: bestUserRemapping.targetNpmPackage,
-        };
-
-        return this.#resolveImportToNpmPackageRemappedByUser({
-          from,
-          importPath,
-          directImport: remappedDirectImport,
-          remapping,
-        });
-      }
-
-      if (
-        !(await this.#isDirectImportLocal(
-          this.#projectRoot,
-          remappedDirectImport,
-        ))
-      ) {
-        throw new HardhatError(
-          HardhatError.ERRORS.SOLIDITY.ILLEGAL_PROJECT_IMPORT_AFTER_REMAPPING,
-          {
-            importPath,
-            from: shortenPath(from.fsPath),
-            remapping: bestUserRemapping.rawFormat,
-            remappedDirectImport,
-          },
-        );
-      }
-
-      return this.#resolveImportToProjectFile({
+      return this.#resolveUserRemappedImportFromProjectFile({
         from,
         importPath,
-        pathWithinTheProject: sourceNamePathToFsPath(remappedDirectImport),
+        directImport,
+        remapping: bestUserRemapping,
       });
     }
 
@@ -481,7 +444,7 @@ export class ResolverImplementation implements Resolver {
       return this.#resolveImportToProjectFile({
         from,
         importPath,
-        pathWithinTheProject: sourceNamePathToFsPath(directImport),
+        fsPathWithinTheProject: sourceNamePathToFsPath(directImport),
       });
     }
 
@@ -489,6 +452,72 @@ export class ResolverImplementation implements Resolver {
       from,
       importPath,
       directImport,
+    });
+  }
+
+  /**
+   * Resolves an import from a project file that is affected by a user
+   * remapping.
+   *
+   * Note that this method must only be called with the best user remapping
+   * applicable to the import, as defined by solc. Otherwise, it's behavior will
+   * be misleading.
+   *
+   * @param from The file from which the import is being resolved.
+   * @param importPath The import path, as written in the source code.
+   * @param directImport The direct import path, after resolving relative paths,
+   * but before applying any remapping.
+   * @param remapping The user remapping that will be applied.
+   */
+  async #resolveUserRemappedImportFromProjectFile({
+    from,
+    importPath,
+    directImport,
+    remapping,
+  }: {
+    from: ProjectResolvedFile;
+    importPath: string;
+    directImport: string;
+    remapping: ResolvedUserRemapping;
+  }): Promise<ResolvedFile> {
+    const remappedDirectImport = applyValidRemapping(directImport, remapping);
+
+    // Special case, where a user remapping's target is an npm pacakge
+    if (remapping.targetNpmPackage !== undefined) {
+      return this.#resolveImportToNpmPackageRemappedByUser({
+        from,
+        importPath,
+        directImport: remappedDirectImport,
+        remapping: {
+          // This weird syntax is because TS doesn't realize that
+          // bestUserRemapping is Required<ResolvedUserRemapping> here
+          ...remapping,
+          targetNpmPackage: remapping.targetNpmPackage,
+        },
+      });
+    }
+
+    if (
+      !(await this.#isDirectImportLocal(
+        this.#projectRoot,
+        remappedDirectImport,
+      ))
+    ) {
+      throw new HardhatError(
+        HardhatError.ERRORS.SOLIDITY.ILLEGAL_PROJECT_IMPORT_AFTER_REMAPPING,
+        {
+          importPath,
+          from: shortenPath(from.fsPath),
+          remapping: remapping.rawFormat,
+          remappedDirectImport,
+        },
+      );
+    }
+
+    return this.#resolveImportToProjectFile({
+      from,
+      importPath,
+      fsPathWithinTheProject: sourceNamePathToFsPath(remappedDirectImport),
     });
   }
 
@@ -514,8 +543,6 @@ export class ResolverImplementation implements Resolver {
   }): Promise<ResolvedFile> {
     // If we wanted to apply its own remappings, this would be the place.
     // Initially we won't support it.
-
-    //
     if (directImport.startsWith(from.package.rootSourceName)) {
       return this.#resolveRelativeImportFromNpmPackage({
         from,
@@ -547,7 +574,7 @@ export class ResolverImplementation implements Resolver {
       }
 
       prefixesNeededByPackage.add(
-        this.#getDirectImportLocalPrefix(directImport),
+        this.#getDirectImportLocalDesambiguationPrefix(directImport),
       );
 
       return resolvedFile;
@@ -593,97 +620,36 @@ export class ResolverImplementation implements Resolver {
 
     const dependencyMapsKey =
       from.type === ResolvedFileType.PROJECT_FILE
-        ? PROJECT_ROOT_SOURCE_NAME_SENTINEL
+        ? PROJECT_ROOT_SENTINEL
         : from.package;
 
-    if (!this.#dependencyMaps.has(dependencyMapsKey)) {
-      this.#dependencyMaps.set(dependencyMapsKey, new Map());
+    let dependenciesMap = this.#dependencyMaps.get(dependencyMapsKey);
+    if (dependenciesMap === undefined) {
+      dependenciesMap = new Map();
+      this.#dependencyMaps.set(dependencyMapsKey, dependenciesMap);
     }
 
-    const dependenciesMap = this.#dependencyMaps.get(dependencyMapsKey);
+    const importPackageName = parsedDirectImport.package;
 
-    assertHardhatInvariant(
-      dependenciesMap !== undefined,
-      "We set the dependency map right above",
-    );
+    let dependency = dependenciesMap.get(importPackageName);
+    if (dependency === undefined) {
+      dependency = await this.#resolveNpmPackage({
+        from,
+        importPath,
+        importPackageName,
+      });
 
-    if (!dependenciesMap.has(parsedDirectImport.package)) {
-      let newDependency:
-        | ResolvedNpmPackage
-        | typeof PROJECT_ROOT_SOURCE_NAME_SENTINEL;
-
-      const baseResolutionDirectory =
-        from.type === ResolvedFileType.PROJECT_FILE
-          ? this.#projectRoot
-          : from.package.rootFsPath;
-
-      const packageJsonResolution = resolve(
-        parsedDirectImport.package + "/package.json",
-        baseResolutionDirectory,
-      );
-
-      if (packageJsonResolution.success === false) {
-        if (packageJsonResolution.error === ResolutionError.MODULE_NOT_FOUND) {
-          throw new HardhatError(
-            HardhatError.ERRORS.SOLIDITY.IMPORTED_NPM_DEPENDENCY_NOT_INSTALLED,
-            {
-              from: shortenPath(from.fsPath),
-              importPath,
-            },
-          );
-        }
-
-        throw new HardhatError(
-          HardhatError.ERRORS.SOLIDITY.IMPORTED_NPM_DEPENDENCY_THAT_USES_EXPORTS,
-          { from: shortenPath(from.fsPath), importPath },
-        );
-      }
-
-      const packageJsonPath = packageJsonResolution.absolutePath;
-
-      const packageJson = await readJsonFile<{ name: string; version: string }>(
-        packageJsonPath,
-      );
-
-      if (isPackageJsonFromProject(packageJsonPath, this.#projectRoot)) {
-        newDependency = PROJECT_ROOT_SOURCE_NAME_SENTINEL;
-      } else {
-        const name = packageJson.name;
-        const version = isPackageJsonFromMonorepo(
-          packageJsonPath,
-          this.#projectRoot,
-        )
-          ? "local"
-          : packageJson.version;
-
-        const npmPackage: ResolvedNpmPackage = {
-          name,
-          version,
-          rootFsPath: path.dirname(packageJsonPath),
-          rootSourceName: npmPackageToRootSourceName(name, version),
-        };
-
-        newDependency = npmPackage;
-      }
-
-      dependenciesMap.set(parsedDirectImport.package, newDependency);
+      dependenciesMap.set(importPackageName, dependency);
     }
 
-    const dependency = dependenciesMap.get(parsedDirectImport.package);
-    assertHardhatInvariant(
-      dependency !== undefined,
-      "We set the dependency right above",
-    );
-
-    if (dependency === PROJECT_ROOT_SOURCE_NAME_SENTINEL) {
+    if (dependency === PROJECT_ROOT_SENTINEL) {
       return this.#resolveImportToProjectFile({
         from,
         importPath,
         // If we import a file through npm and end up in the Hardhat project,
-        // we are going to remap the package name to "", so that the path
-        // section of the parsed direct is in fact the directImport in the
-        // context of the package.
-        pathWithinTheProject: sourceNamePathToFsPath(parsedDirectImport.path),
+        // we are going to remap the importPackageName to "", so that the path
+        // section of the parsed direct import should be the relative path.
+        fsPathWithinTheProject: sourceNamePathToFsPath(parsedDirectImport.path),
       });
     }
 
@@ -691,7 +657,7 @@ export class ResolverImplementation implements Resolver {
       from,
       importPath,
       importedPackage: dependency,
-      pathWithinThePackage: sourceNamePathToFsPath(parsedDirectImport.path),
+      fsPathWithinThePackage: sourceNamePathToFsPath(parsedDirectImport.path),
     });
   }
 
@@ -718,13 +684,13 @@ export class ResolverImplementation implements Resolver {
   async #resolveImportToProjectFile({
     from,
     importPath,
-    pathWithinTheProject,
+    fsPathWithinTheProject,
   }: {
     from: ResolvedFile;
     importPath: string;
-    pathWithinTheProject: string;
+    fsPathWithinTheProject: string;
   }): Promise<ProjectResolvedFile> {
-    const sourceName = fsPathToSourceNamePath(pathWithinTheProject);
+    const sourceName = fsPathToSourceNamePath(fsPathWithinTheProject);
     const cached = this.#resolvedFileBySourceName.get(sourceName);
     if (cached !== undefined) {
       /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions --
@@ -735,22 +701,22 @@ export class ResolverImplementation implements Resolver {
     // This is a project file, so if it was imported from a local file, this
     // is the direct import, without any remapping or necessary consideration.
     // If this was imported from an npm package, we are remapping the package
-    // name to "", so that the direct import is the same as the relative path.
-    const relativePath = pathWithinTheProject;
+    // name of the import to "", so that the direct import is also the same as
+    // the relative path.
     await this.#validateExistanceAndCasingOfImport({
       from,
       importPath,
-      relativePathToValidate: relativePath,
-      absolutePathToValidateFrom: this.#projectRoot,
+      relativeFsPathToValidate: fsPathWithinTheProject,
+      absoluteFsPathToValidateFrom: this.#projectRoot,
     });
 
-    const filePath = path.join(this.#projectRoot, relativePath);
+    const fsPath = path.join(this.#projectRoot, fsPathWithinTheProject);
 
     const resolvedFile: ProjectResolvedFile = {
       type: ResolvedFileType.PROJECT_FILE,
       sourceName,
-      fsPath: filePath,
-      content: await readUtf8File(filePath),
+      fsPath,
+      content: await readUtf8File(fsPath),
     };
 
     this.#resolvedFileBySourceName.set(sourceName, resolvedFile);
@@ -788,7 +754,7 @@ export class ResolverImplementation implements Resolver {
       return cached as NpmPackageResolvedFile;
     }
 
-    const relativeFilePath = sourceNamePathToFsPath(
+    const relativeFileFsPath = sourceNamePathToFsPath(
       path.relative(remapping.targetNpmPackage.rootSourceName, directImport),
     );
 
@@ -799,20 +765,20 @@ export class ResolverImplementation implements Resolver {
     await this.#validateExistanceAndCasingOfImport({
       from,
       importPath,
-      relativePathToValidate: relativeFilePath,
-      absolutePathToValidateFrom: remapping.targetNpmPackage.rootFsPath,
+      relativeFsPathToValidate: relativeFileFsPath,
+      absoluteFsPathToValidateFrom: remapping.targetNpmPackage.rootFsPath,
     });
 
-    const filePath = path.join(
+    const fsPath = path.join(
       remapping.targetNpmPackage.rootFsPath,
-      relativeFilePath,
+      relativeFileFsPath,
     );
 
     const resolvedFile: NpmPackageResolvedFile = {
       type: ResolvedFileType.NPM_PACKGE_FILE,
       sourceName,
-      fsPath: filePath,
-      content: await readUtf8File(filePath),
+      fsPath,
+      content: await readUtf8File(fsPath),
       package: remapping.targetNpmPackage,
     };
 
@@ -855,8 +821,8 @@ export class ResolverImplementation implements Resolver {
     await this.#validateExistanceAndCasingOfImport({
       from,
       importPath,
-      relativePathToValidate: relativePath,
-      absolutePathToValidateFrom: from.package.rootFsPath,
+      relativeFsPathToValidate: relativePath,
+      absoluteFsPathToValidateFrom: from.package.rootFsPath,
     });
 
     const filePath = path.join(from.package.rootFsPath, relativePath);
@@ -870,6 +836,7 @@ export class ResolverImplementation implements Resolver {
     };
 
     this.#resolvedFileBySourceName.set(sourceName, resolvedFile);
+
     return resolvedFile;
   }
 
@@ -877,6 +844,9 @@ export class ResolverImplementation implements Resolver {
    * This method implements the import resolution technique number 4: A file
    * from an npm package is importing another file from the same package with a
    * direct import.
+   *
+   * For example, a file `node_modules/foo/File.sol` imports
+   * `node_modules/foo/bar/File2.sol` with the direct import `bar/File2.sol`.
    *
    * @param from The file from which the import is being resolved.
    * @param importPath The import path, as written in the source code.
@@ -901,24 +871,27 @@ export class ResolverImplementation implements Resolver {
       return cached as NpmPackageResolvedFile;
     }
 
+    const relativeFsPath = sourceNamePathToFsPath(directImport);
+
     await this.#validateExistanceAndCasingOfImport({
       from,
       importPath,
-      relativePathToValidate: fsPathToSourceNamePath(directImport),
-      absolutePathToValidateFrom: from.package.rootFsPath,
+      relativeFsPathToValidate: relativeFsPath,
+      absoluteFsPathToValidateFrom: from.package.rootFsPath,
     });
 
-    const filePath = path.join(from.package.rootFsPath, directImport);
+    const fsPath = path.join(from.package.rootFsPath, relativeFsPath);
 
     const resolvedFile: NpmPackageResolvedFile = {
       type: ResolvedFileType.NPM_PACKGE_FILE,
       sourceName,
-      fsPath: filePath,
-      content: await readUtf8File(filePath),
+      fsPath,
+      content: await readUtf8File(fsPath),
       package: from.package,
     };
 
     this.#resolvedFileBySourceName.set(sourceName, resolvedFile);
+
     return resolvedFile;
   }
 
@@ -926,6 +899,8 @@ export class ResolverImplementation implements Resolver {
    * This method implements the import resolution technique number 5: A file,
    * within the project or from an npm pacakge, is importing a file from a
    * different npm package.
+   *
+   * Note: This is not meant to support imports into the Hardhat project.
    *
    * @param from The file from which the import is being resolved.
    * @param importPath The import path, as written in the source code.
@@ -938,16 +913,16 @@ export class ResolverImplementation implements Resolver {
     from,
     importPath,
     importedPackage,
-    pathWithinThePackage,
+    fsPathWithinThePackage,
   }: {
     from: ResolvedFile;
     importPath: string;
     importedPackage: ResolvedNpmPackage;
-    pathWithinThePackage: string;
+    fsPathWithinThePackage: string;
   }): Promise<NpmPackageResolvedFile> {
     const sourceName =
       importedPackage.rootSourceName +
-      fsPathToSourceNamePath(pathWithinThePackage);
+      fsPathToSourceNamePath(fsPathWithinThePackage);
     const cached = this.#resolvedFileBySourceName.get(sourceName);
     if (cached !== undefined) {
       /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions --
@@ -958,20 +933,20 @@ export class ResolverImplementation implements Resolver {
     await this.#validateExistanceAndCasingOfImport({
       from,
       importPath,
-      relativePathToValidate: pathWithinThePackage,
-      absolutePathToValidateFrom: importedPackage.rootFsPath,
+      relativeFsPathToValidate: fsPathWithinThePackage,
+      absoluteFsPathToValidateFrom: importedPackage.rootFsPath,
     });
 
-    const filePath = path.join(
+    const fsPath = path.join(
       importedPackage.rootFsPath,
-      pathWithinThePackage,
+      fsPathWithinThePackage,
     );
 
     const resolvedFile: NpmPackageResolvedFile = {
       type: ResolvedFileType.NPM_PACKGE_FILE,
       sourceName,
-      fsPath: filePath,
-      content: await readUtf8File(filePath),
+      fsPath,
+      content: await readUtf8File(fsPath),
       package: importedPackage,
     };
 
@@ -983,11 +958,83 @@ export class ResolverImplementation implements Resolver {
   // >>>>>>>>>> END SECTION: Import resolution techniques
 
   /**
+   * Resolves the npm package imported by the importPath in the from file.
+   *
+   * @param from The file from which the import is being resolved.
+   * @param importPath The import path, as written in the source code.
+   * @param importPackageName The name of the package to import, as present in
+   * the importPath, and not necessarily the name of the package in the
+   * package.json.
+   * @returns A ResolvedNpmPackage or PROJECT_ROOT_SENTINEL.
+   */
+  async #resolveNpmPackage({
+    from,
+    importPath,
+    importPackageName,
+  }: {
+    from: ResolvedFile;
+    importPath: string;
+    importPackageName: string;
+  }): Promise<ResolvedNpmPackage | typeof PROJECT_ROOT_SENTINEL> {
+    const baseResolutionDirectory =
+      from.type === ResolvedFileType.PROJECT_FILE
+        ? this.#projectRoot
+        : from.package.rootFsPath;
+
+    const packageJsonResolution = resolve(
+      importPackageName + "/package.json",
+      baseResolutionDirectory,
+    );
+
+    if (packageJsonResolution.success === false) {
+      if (packageJsonResolution.error === ResolutionError.MODULE_NOT_FOUND) {
+        throw new HardhatError(
+          HardhatError.ERRORS.SOLIDITY.IMPORTED_NPM_DEPENDENCY_NOT_INSTALLED,
+          {
+            from: shortenPath(from.fsPath),
+            importPath,
+          },
+        );
+      }
+
+      throw new HardhatError(
+        HardhatError.ERRORS.SOLIDITY.IMPORTED_NPM_DEPENDENCY_THAT_USES_EXPORTS,
+        { from: shortenPath(from.fsPath), importPath },
+      );
+    }
+
+    const packageJsonPath = packageJsonResolution.absolutePath;
+
+    const packageJson = await readJsonFile<{ name: string; version: string }>(
+      packageJsonPath,
+    );
+
+    if (isPackageJsonFromProject(packageJsonPath, this.#projectRoot)) {
+      return PROJECT_ROOT_SENTINEL;
+    }
+
+    const name = packageJson.name;
+    const version = isPackageJsonFromMonorepo(
+      packageJsonPath,
+      this.#projectRoot,
+    )
+      ? "local"
+      : packageJson.version;
+
+    return {
+      name,
+      version,
+      rootFsPath: path.dirname(packageJsonPath),
+      rootSourceName: npmPackageToRootSourceName(name, version),
+    };
+  }
+
+  /**
    * This method returns true if a direct import should be considered an import
    * to a local file when evaluated in the context of the Hardhat project.
    */
   async #isDirectImportLocal(
-    projectOrPackageRoot: string,
+    projectOrPackageRootFsPath: string,
     directImport: string,
   ): Promise<boolean> {
     if (directImport === "hardhat/console.sol") {
@@ -1004,16 +1051,19 @@ export class ResolverImplementation implements Resolver {
     const firstDirectory = directImport.substring(0, slash);
 
     // TODO: Cache this?
-    return exists(path.join(projectOrPackageRoot, firstDirectory));
+    return exists(path.join(projectOrPackageRootFsPath, firstDirectory));
   }
 
   /**
-   * Returns the prefix that is used by #isDirectImportLocal to determine if a
-   * direct import is local.
+   * Returns the prefix used to desambiguate a directImport by
+   * #isDirectImportLocal to determine if its local.
    *
-   * NOTE: This method does not support `hardhat/console.sol`.
+   * For example, the prefix for `foo/bar/File.sol`, this returns `foo/`.
+   *
+   * NOTE: This method does not support `hardhat/console.sol`, as that's a
+   * special case, which is never considered local.
    */
-  #getDirectImportLocalPrefix(directImport: string): string {
+  #getDirectImportLocalDesambiguationPrefix(directImport: string): string {
     const slash = directImport.indexOf("/");
 
     // If it's a file in the root directory
@@ -1043,19 +1093,19 @@ export class ResolverImplementation implements Resolver {
   async #validateExistanceAndCasingOfImport({
     from,
     importPath,
-    relativePathToValidate,
-    absolutePathToValidateFrom,
+    relativeFsPathToValidate,
+    absoluteFsPathToValidateFrom,
   }: {
     from: ResolvedFile;
     importPath: string;
-    relativePathToValidate: string;
-    absolutePathToValidateFrom: string;
+    relativeFsPathToValidate: string;
+    absoluteFsPathToValidateFrom: string;
   }) {
-    let trueCasePath: string;
+    let trueCaseFsPath: string;
     try {
-      trueCasePath = await getFileTrueCase(
-        absolutePathToValidateFrom,
-        relativePathToValidate,
+      trueCaseFsPath = await getFileTrueCase(
+        absoluteFsPathToValidateFrom,
+        relativeFsPathToValidate,
       );
     } catch (error) {
       ensureError(error, FileNotFoundError);
@@ -1067,13 +1117,13 @@ export class ResolverImplementation implements Resolver {
       );
     }
 
-    if (relativePathToValidate !== trueCasePath) {
+    if (relativeFsPathToValidate !== trueCaseFsPath) {
       throw new HardhatError(
         HardhatError.ERRORS.SOLIDITY.IMPORTED_FILE_WITH_ICORRECT_CASING,
         {
           importPath,
           from: shortenPath(from.fsPath),
-          correctCasing: fsPathToSourceNamePath(trueCasePath),
+          correctCasing: fsPathToSourceNamePath(trueCaseFsPath),
         },
       );
     }
@@ -1251,27 +1301,27 @@ function npmPackageToRootSourceName(name: string, version: string): string {
 }
 
 function isPackageJsonFromMonorepo(
-  packageJsonPath: string,
+  packageJsonFsPath: string,
   projectRoot: string,
 ): boolean {
   return (
-    !packageJsonPath.includes("node_modules") &&
-    !packageJsonPath.startsWith(projectRoot)
+    !packageJsonFsPath.includes("node_modules") &&
+    !packageJsonFsPath.startsWith(projectRoot)
   );
 }
 
 function isPackageJsonFromProject(
-  packageJsonPath: string,
+  packageJsonFsPath: string,
   projectRoot: string,
 ): boolean {
   return (
-    !packageJsonPath.includes("node_modules") &&
-    packageJsonPath.startsWith(projectRoot)
+    !packageJsonFsPath.includes("node_modules") &&
+    packageJsonFsPath.startsWith(projectRoot)
   );
 }
 
-function isPackageJsonFromNpmPackage(packageJsonPath: string): boolean {
-  return packageJsonPath.includes("node_modules");
+function isPackageJsonFromNpmPackage(packageJsonFsPath: string): boolean {
+  return packageJsonFsPath.includes("node_modules");
 }
 
 /**
