@@ -18,7 +18,6 @@ import {
   FileNotFoundError,
   exists,
   getFileTrueCase,
-  getRealPath,
   readJsonFile,
   readUtf8File,
 } from "@ignored/hardhat-vnext-utils/fs";
@@ -84,7 +83,6 @@ const PROJECT_ROOT_SOURCE_NAME_SENTINEL: unique symbol = Symbol();
 
 export class ResolverImplementation implements Resolver {
   readonly #projectRoot: string;
-  readonly #workingDirectory: string;
   readonly #userRemappings: ResolvedUserRemapping[];
 
   /**
@@ -134,10 +132,16 @@ export class ResolverImplementation implements Resolver {
    **/
   readonly #resolvedFileBySourceName: Map<string, ResolvedFile> = new Map();
 
+  /**
+   * Creates a new Resolver.
+   *
+   * @param projectRoot The absolute path to the Hardhat project root.
+   * @param userRemappingStrings The remappings provided by the user.
+   * @param workingDirectory The absolute path to the working directory.
+   */
   public static async create(
     projectRoot: string,
     userRemappingStrings: string[],
-    workingDirectory?: string,
   ): Promise<Resolver> {
     const userRemappings = await Promise.all(
       userRemappingStrings.map((remappingString) =>
@@ -145,22 +149,14 @@ export class ResolverImplementation implements Resolver {
       ),
     );
 
-    return new ResolverImplementation(
-      workingDirectory !== undefined
-        ? await getRealPath(workingDirectory)
-        : process.cwd(),
-      projectRoot,
-      userRemappings,
-    );
+    return new ResolverImplementation(projectRoot, userRemappings);
   }
 
   private constructor(
-    workingDirectory: string,
     projectRoot: string,
     userRemappings: ResolvedUserRemapping[],
   ) {
     this.#projectRoot = projectRoot;
-    this.#workingDirectory = workingDirectory;
     this.#userRemappings = userRemappings;
     this.#dependencyMaps.set(PROJECT_ROOT_SOURCE_NAME_SENTINEL, new Map());
   }
@@ -173,7 +169,7 @@ export class ResolverImplementation implements Resolver {
         throw new HardhatError(
           HardhatError.ERRORS.SOLIDITY.RESOLVING_INCORRECT_FILE_AS_PROJECT_FILE,
           {
-            file: this.#shortenPath(absoluteFilePath),
+            file: shortenPath(absoluteFilePath),
           },
         );
       }
@@ -214,7 +210,7 @@ export class ResolverImplementation implements Resolver {
 
         throw new HardhatError(
           HardhatError.ERRORS.SOLIDITY.RESOLVING_NONEXISTENT_PROJECT_FILE,
-          { file: this.#shortenPath(absoluteFilePath) },
+          { file: shortenPath(absoluteFilePath) },
           error,
         );
       }
@@ -269,7 +265,7 @@ export class ResolverImplementation implements Resolver {
           HardhatError.ERRORS.SOLIDITY.IMPORT_PATH_WITH_WINDOWS_SEPARATOR,
           {
             importPath,
-            from: this.#shortenPath(from.path),
+            from: shortenPath(from.fsPath),
           },
         );
       }
@@ -286,7 +282,7 @@ export class ResolverImplementation implements Resolver {
               HardhatError.ERRORS.SOLIDITY.ILLEGAL_PACKAGE_IMPORT,
               {
                 importPath,
-                from: this.#shortenPath(from.path),
+                from: shortenPath(from.fsPath),
               },
             );
           }
@@ -296,7 +292,7 @@ export class ResolverImplementation implements Resolver {
               HardhatError.ERRORS.SOLIDITY.ILEGALL_PROJECT_IMPORT,
               {
                 importPath,
-                from: this.#shortenPath(from.path),
+                from: shortenPath(from.fsPath),
               },
             );
           }
@@ -467,7 +463,7 @@ export class ResolverImplementation implements Resolver {
           HardhatError.ERRORS.SOLIDITY.ILLEGAL_PROJECT_IMPORT_AFTER_REMAPPING,
           {
             importPath,
-            from: this.#shortenPath(from.path),
+            from: shortenPath(from.fsPath),
             remapping: bestUserRemapping.rawFormat,
             remappedDirectImport,
           },
@@ -589,7 +585,7 @@ export class ResolverImplementation implements Resolver {
     if (parsedDirectImport === undefined) {
       throw new HardhatError(HardhatError.ERRORS.SOLIDITY.INVALID_NPM_IMPORT, {
         importPath,
-        from: this.#shortenPath(from.path),
+        from: shortenPath(from.fsPath),
       });
     }
 
@@ -629,7 +625,7 @@ export class ResolverImplementation implements Resolver {
           throw new HardhatError(
             HardhatError.ERRORS.SOLIDITY.IMPORTED_NPM_DEPENDENCY_NOT_INSTALLED,
             {
-              from: this.#shortenPath(from.path),
+              from: shortenPath(from.fsPath),
               importPath,
             },
           );
@@ -637,7 +633,7 @@ export class ResolverImplementation implements Resolver {
 
         throw new HardhatError(
           HardhatError.ERRORS.SOLIDITY.IMPORTED_NPM_DEPENDENCY_THAT_USES_EXPORTS,
-          { from: this.#shortenPath(from.path), importPath },
+          { from: shortenPath(from.fsPath), importPath },
         );
       }
 
@@ -1061,7 +1057,7 @@ export class ResolverImplementation implements Resolver {
 
       throw new HardhatError(
         HardhatError.ERRORS.SOLIDITY.IMPORTED_FILE_DOESNT_EXIST,
-        { importPath, from: this.#shortenPath(from.path) },
+        { importPath, from: shortenPath(from.fsPath) },
         error,
       );
     }
@@ -1071,15 +1067,11 @@ export class ResolverImplementation implements Resolver {
         HardhatError.ERRORS.SOLIDITY.IMPORTED_FILE_WITH_ICORRECT_CASING,
         {
           importPath,
-          from: this.#shortenPath(from.path),
+          from: shortenPath(from.fsPath),
           correctCasing: fsPathToSourceNamePath(trueCasePath),
         },
       );
     }
-  }
-
-  #shortenPath(absolutePath: string): string {
-    return shortenPath(absolutePath, this.#workingDirectory);
   }
 
   /**
