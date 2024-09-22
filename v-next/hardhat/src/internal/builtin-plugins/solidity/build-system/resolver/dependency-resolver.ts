@@ -194,7 +194,7 @@ export class ResolverImplementation implements Resolver {
       //
       // If we need to fetch the right casing, we'd have to recheck the cache,
       // to avoid re-resolving the file.
-      let sourceName = fsPathToImportPath(relativeFilePath);
+      let sourceName = fsPathToSourceNamePath(relativeFilePath);
       const cached = this.#resolvedFileBySourceName.get(sourceName);
 
       if (cached !== undefined) {
@@ -220,7 +220,7 @@ export class ResolverImplementation implements Resolver {
       }
 
       // Now that we have the correct casing, we "fix" the source name.
-      sourceName = fsPathToImportPath(trueCasePath);
+      sourceName = fsPathToSourceNamePath(trueCasePath);
 
       // Maybe it was already resolved, so we need to check with the right
       // casing
@@ -275,7 +275,7 @@ export class ResolverImplementation implements Resolver {
       }
 
       if (importPath.startsWith("./") || importPath.startsWith("../")) {
-        directImport = importPathJoin(
+        directImport = sourceNamePathJoin(
           path.dirname(from.sourceName),
           importPath,
         );
@@ -477,7 +477,7 @@ export class ResolverImplementation implements Resolver {
       return this.#resolveImportToProjectFile({
         from,
         importPath,
-        pathWithinTheProject: importPathToFsPath(remappedDirectImport),
+        pathWithinTheProject: sourceNamePathToFsPath(remappedDirectImport),
       });
     }
 
@@ -485,7 +485,7 @@ export class ResolverImplementation implements Resolver {
       return this.#resolveImportToProjectFile({
         from,
         importPath,
-        pathWithinTheProject: importPathToFsPath(directImport),
+        pathWithinTheProject: sourceNamePathToFsPath(directImport),
       });
     }
 
@@ -685,7 +685,7 @@ export class ResolverImplementation implements Resolver {
         // we are going to remap the package name to "", so that the path
         // section of the parsed direct is in fact the directImport in the
         // context of the package.
-        pathWithinTheProject: importPathToFsPath(parsedDirectImport.path),
+        pathWithinTheProject: sourceNamePathToFsPath(parsedDirectImport.path),
       });
     }
 
@@ -693,7 +693,7 @@ export class ResolverImplementation implements Resolver {
       from,
       importPath,
       importedPackage: dependency,
-      pathWithinThePackage: importPathToFsPath(parsedDirectImport.path),
+      pathWithinThePackage: sourceNamePathToFsPath(parsedDirectImport.path),
     });
   }
 
@@ -726,7 +726,7 @@ export class ResolverImplementation implements Resolver {
     importPath: string;
     pathWithinTheProject: string;
   }): Promise<ProjectResolvedFile> {
-    const sourceName = fsPathToImportPath(pathWithinTheProject);
+    const sourceName = fsPathToSourceNamePath(pathWithinTheProject);
     const cached = this.#resolvedFileBySourceName.get(sourceName);
     if (cached !== undefined) {
       /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions --
@@ -790,7 +790,7 @@ export class ResolverImplementation implements Resolver {
       return cached as NpmPackageResolvedFile;
     }
 
-    const relativeFilePath = importPathToFsPath(
+    const relativeFilePath = sourceNamePathToFsPath(
       path.relative(remapping.targetNpmPackage.rootSourceName, directImport),
     );
 
@@ -850,7 +850,7 @@ export class ResolverImplementation implements Resolver {
       return cached as NpmPackageResolvedFile;
     }
 
-    const relativePath = importPathToFsPath(
+    const relativePath = sourceNamePathToFsPath(
       path.relative(from.package.rootSourceName, directImport),
     );
 
@@ -906,7 +906,7 @@ export class ResolverImplementation implements Resolver {
     await this.#validateExistanceAndCasingOfImport({
       from,
       importPath,
-      relativePathToValidate: fsPathToImportPath(directImport),
+      relativePathToValidate: fsPathToSourceNamePath(directImport),
       absolutePathToValidateFrom: from.package.rootPath,
     });
 
@@ -948,7 +948,8 @@ export class ResolverImplementation implements Resolver {
     pathWithinThePackage: string;
   }): Promise<NpmPackageResolvedFile> {
     const sourceName =
-      importedPackage.rootSourceName + fsPathToImportPath(pathWithinThePackage);
+      importedPackage.rootSourceName +
+      fsPathToSourceNamePath(pathWithinThePackage);
     const cached = this.#resolvedFileBySourceName.get(sourceName);
     if (cached !== undefined) {
       /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions --
@@ -1071,7 +1072,7 @@ export class ResolverImplementation implements Resolver {
         {
           importPath,
           from: this.#shortenPath(from.path),
-          correctCasing: fsPathToImportPath(trueCasePath),
+          correctCasing: fsPathToSourceNamePath(trueCasePath),
         },
       );
     }
@@ -1277,13 +1278,15 @@ function isPackageJsonFromNpmPackage(packageJsonPath: string): boolean {
 }
 
 /**
- * Transforms an fs path into an import path, by normalizing their
+ * Transforms an fs path into a sourceName or import path, by normalizing their
  * path separators to /.
+ *
+ * Note that source
  *
  * Note: This function is exported for testing purposes, but it's not meant to
  * be used outside of the resolver.
  */
-export function fsPathToImportPath(fsPath: string): string {
+export function fsPathToSourceNamePath(fsPath: string): string {
   if (path.sep === "/") {
     return fsPath;
   }
@@ -1292,23 +1295,23 @@ export function fsPathToImportPath(fsPath: string): string {
 }
 
 /**
- * Transforms an import path into an fs path, by normalizing their
+ * Transforms a sourceName or import path into an fs path, by normalizing their
  * path separators to /.
  *
  * Note: This function is exported for testing purposes, but it's not meant to
  * be used outside of the resolver.
  */
-export function importPathToFsPath(importPath: string): string {
+export function sourceNamePathToFsPath(sourceNamePath: string): string {
   if (path.sep === "/") {
-    return importPath;
+    return sourceNamePath;
   }
 
-  return importPath.replace(/\//g, "\\");
+  return sourceNamePath.replace(/\//g, "\\");
 }
 
 /**
- * The equivalent of path.join but for import paths, not fs paths.
+ * The equivalent of path.join but for sourceName or import paths, not fs paths.
  */
-function importPathJoin(...parts: string[]): string {
-  return fsPathToImportPath(path.join(...parts));
+function sourceNamePathJoin(...parts: string[]): string {
+  return fsPathToSourceNamePath(path.join(...parts));
 }
