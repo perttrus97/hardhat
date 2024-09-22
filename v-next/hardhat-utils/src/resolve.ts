@@ -1,5 +1,7 @@
 import { createRequire } from "node:module";
 
+import { ensureError } from "./error.js";
+
 /**
  * The different errors that can be found when resolving a module.
  */
@@ -31,7 +33,10 @@ export function resolve(
   moduleIdentifierToResolve: string,
   from: string,
 ): ResolutionResult {
-  const require = createRequire(import.meta.url);
+  // We need to create a new require with `from` as `require.resolve` seems to
+  // ignore its `paths` option, at least on Windows. To play safe, we still
+  // provide the `paths`.
+  const require = createRequire(from);
 
   try {
     return {
@@ -41,8 +46,9 @@ export function resolve(
       }),
     };
   } catch (e) {
-    // ensure that this is MODULE_NOT_FOUND
-    if (typeof e === "object" && e !== null && "code" in e) {
+    ensureError(e);
+
+    if ("code" in e) {
       if (e.code === "MODULE_NOT_FOUND") {
         return { success: false, error: ResolutionError.MODULE_NOT_FOUND };
       }
@@ -52,7 +58,6 @@ export function resolve(
       }
     }
 
-    /* c8 ignore next 2 */
     throw e;
   }
 }

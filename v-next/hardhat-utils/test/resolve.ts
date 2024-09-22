@@ -46,4 +46,24 @@ describe("Node.js resolution", () => {
     assert.equal(resolved.success, false);
     assert.equal(resolved.error, ResolutionError.NOT_EXPORTED);
   });
+
+  it("Should be able to finde from a different directory", () => {
+    const fixtureProjectPath = path.join(
+      import.meta.dirname,
+      "fixture-projects",
+      "resolve-fixture",
+    );
+
+    const resolved = resolve("dep/package.json", fixtureProjectPath);
+    assert.ok(resolved.success, "A successful resolution returns an object");
+    assert.equal(
+      resolved.absolutePath,
+      path.join(fixtureProjectPath, "node_modules/dep/package.json"),
+    );
+
+    // It shouldn't find it in this directory
+    const notResolved = resolve("dep/package.json", import.meta.dirname);
+    assert.ok(!notResolved.success, "A failed resolution returns an object");
+    assert.equal(notResolved.error, ResolutionError.MODULE_NOT_FOUND);
+  });
 });
