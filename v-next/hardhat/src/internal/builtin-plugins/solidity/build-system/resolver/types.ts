@@ -173,7 +173,7 @@ export interface Resolver {
    * Returns the list of remappings needed to build the project.
    *
    * TODO: Does this include all the user remappings? Only the necessary ones?
-   * What if we are only compiling parts of it?
+   * What if we are only compiling parts of the dependency graph of it?
    */
   getRemappings(): Remapping[];
 }

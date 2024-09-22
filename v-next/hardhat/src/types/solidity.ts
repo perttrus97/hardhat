@@ -65,24 +65,24 @@ export enum FileBuildResultType {
 }
 
 export type FileBuildResult =
-  | FileBuildCacheHit
-  | FileBuildSuccess
-  | FileBuildFailure;
+  | CacheHitFileBuildResult
+  | SuccessfulFileBuildResult
+  | FailedFileBuildResult;
 
-export interface FileBuildCacheHit {
+export interface CacheHitFileBuildResult {
   type: FileBuildResultType.CACHE_HIT;
   // TODO: Should we remove this? It is a buildId of an already existing build
   // info.
   buildId: string;
 }
 
-export interface FileBuildSuccess {
+export interface SuccessfulFileBuildResult {
   type: FileBuildResultType.BUILD_FAILURE;
   buildId: string;
   contractArtifactsGenerated: string[];
 }
 
-export interface FileBuildFailure {
+export interface FailedFileBuildResult {
   type: FileBuildResultType.BUILD_FAILURE;
   buildId: string;
   errors: any[]; // TODO: This can't be verbatim from `solc` as we have to

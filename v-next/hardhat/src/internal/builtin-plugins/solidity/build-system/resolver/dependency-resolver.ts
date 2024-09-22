@@ -190,12 +190,12 @@ export class ResolverImplementation implements Resolver {
       // If we need to fetch the right casing, we'd have to recheck the cache,
       // to avoid re-resolving the file.
       let sourceName = fsPathToSourceNamePath(relativeFilePath);
-      const cached = this.#resolvedFileBySourceName.get(sourceName);
+      const existing = this.#resolvedFileBySourceName.get(sourceName);
 
-      if (cached !== undefined) {
+      if (existing !== undefined) {
         /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions --
       The cache is type-unsafe, but we are sure this is a ProjectResolvedFile */
-        return cached as ProjectResolvedFile;
+        return existing as ProjectResolvedFile;
       }
 
       let trueCaseFsPath: string;
@@ -248,10 +248,88 @@ export class ResolverImplementation implements Resolver {
   public async resolveNpmDependencyFile(
     npmModule: string,
   ): Promise<NpmPackageResolvedFile> {
-    assertHardhatInvariant(
-      false,
-      `Trying to resolve npm dependency file ${npmModule} but this hasn't been implemented yet`,
-    );
+    return this.#mutex.exclusiveRun(async () => {
+      const parsedNpmModule = this.#parseNpmDirectImport(npmModule);
+
+      if (parsedNpmModule === undefined) {
+        throw new HardhatError(
+          HardhatError.ERRORS.SOLIDITY.RESOLVE_NPM_FILE_WITH_INVALID_FORMAT,
+          { module: npmModule },
+        );
+      }
+
+      if (await this.#isDirectImportLocal(this.#projectRoot, npmModule)) {
+        const directory =
+          this.#getDirectImportLocalDesambiguationPrefix(npmModule);
+
+        throw new HardhatError(
+          HardhatError.ERRORS.SOLIDITY.RESOLVE_NPM_FILE_CLASHES_WITH_LOCAL_FILES,
+          {
+            module: npmModule,
+            directory,
+          },
+        );
+      }
+
+      const modulePackageName = parsedNpmModule.package;
+
+      const npmPackage = await this.#resolveNpmPackage({
+        from: PROJECT_ROOT_SENTINEL,
+        packageName: modulePackageName,
+      });
+
+      assertHardhatInvariant(
+        npmPackage !== PROJECT_ROOT_SENTINEL,
+        "Resolving a local file as if it were an npm module",
+      );
+
+      let trueCaseFsPath: string;
+      try {
+        trueCaseFsPath = await getFileTrueCase(
+          npmPackage.rootFsPath,
+          parsedNpmModule.path,
+        );
+      } catch (error) {
+        ensureError(error, FileNotFoundError);
+
+        throw new HardhatError(
+          HardhatError.ERRORS.SOLIDITY.RESOLVE_NON_EXISTENT_NPM_FILE,
+          { module: npmModule },
+          error,
+        );
+      }
+
+      // Just like with the project files, we are more forgiving with the casing
+      // here, as this is not used for imports.
+
+      const sourceName = sourceNamePathJoin(
+        parsedNpmModule.package,
+        fsPathToSourceNamePath(trueCaseFsPath),
+      );
+
+      const resolvedWithTheRightCasing =
+        this.#resolvedFileBySourceName.get(sourceName);
+
+      if (resolvedWithTheRightCasing !== undefined) {
+        /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+      -- If it was, it's a ProjectResolvedFile */
+        return resolvedWithTheRightCasing as NpmPackageResolvedFile;
+      }
+
+      const fsPath = path.join(npmPackage.rootFsPath, trueCaseFsPath);
+
+      const resolvedFile: NpmPackageResolvedFile = {
+        type: ResolvedFileType.NPM_PACKGE_FILE,
+        sourceName,
+        fsPath,
+        content: await readUtf8File(fsPath),
+        package: npmPackage,
+      };
+
+      this.#resolvedFileBySourceName.set(sourceName, resolvedFile);
+
+      return resolvedFile;
+    });
   }
 
   public async resolveImport(
@@ -618,29 +696,11 @@ export class ResolverImplementation implements Resolver {
       });
     }
 
-    const dependencyMapsKey =
-      from.type === ResolvedFileType.PROJECT_FILE
-        ? PROJECT_ROOT_SENTINEL
-        : from.package;
-
-    let dependenciesMap = this.#dependencyMaps.get(dependencyMapsKey);
-    if (dependenciesMap === undefined) {
-      dependenciesMap = new Map();
-      this.#dependencyMaps.set(dependencyMapsKey, dependenciesMap);
-    }
-
-    const importPackageName = parsedDirectImport.package;
-
-    let dependency = dependenciesMap.get(importPackageName);
-    if (dependency === undefined) {
-      dependency = await this.#resolveNpmPackage({
-        from,
-        importPath,
-        importPackageName,
-      });
-
-      dependenciesMap.set(importPackageName, dependency);
-    }
+    const dependency = await this.#resolveNpmPackageForImport({
+      from,
+      importPath,
+      importPackageName: parsedDirectImport.package,
+    });
 
     if (dependency === PROJECT_ROOT_SENTINEL) {
       return this.#resolveImportToProjectFile({
@@ -691,11 +751,11 @@ export class ResolverImplementation implements Resolver {
     fsPathWithinTheProject: string;
   }): Promise<ProjectResolvedFile> {
     const sourceName = fsPathToSourceNamePath(fsPathWithinTheProject);
-    const cached = this.#resolvedFileBySourceName.get(sourceName);
-    if (cached !== undefined) {
+    const existing = this.#resolvedFileBySourceName.get(sourceName);
+    if (existing !== undefined) {
       /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions --
       The cache is type-unsafe, but we are sure this is a ProjectResolvedFile */
-      return cached as ProjectResolvedFile;
+      return existing as ProjectResolvedFile;
     }
 
     // This is a project file, so if it was imported from a local file, this
@@ -747,11 +807,11 @@ export class ResolverImplementation implements Resolver {
     remapping: Required<ResolvedUserRemapping>;
   }): Promise<NpmPackageResolvedFile> {
     const sourceName = directImport;
-    const cached = this.#resolvedFileBySourceName.get(sourceName);
-    if (cached !== undefined) {
+    const existing = this.#resolvedFileBySourceName.get(sourceName);
+    if (existing !== undefined) {
       /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions --
       The cache is type-unsafe, but we are sure this is a NpmPackageResolvedFile */
-      return cached as NpmPackageResolvedFile;
+      return existing as NpmPackageResolvedFile;
     }
 
     const relativeFileFsPath = sourceNamePathToFsPath(
@@ -807,11 +867,11 @@ export class ResolverImplementation implements Resolver {
     importPath: string;
   }): Promise<NpmPackageResolvedFile> {
     const sourceName = directImport;
-    const cached = this.#resolvedFileBySourceName.get(sourceName);
-    if (cached !== undefined) {
+    const existing = this.#resolvedFileBySourceName.get(sourceName);
+    if (existing !== undefined) {
       /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions --
       The cache is type-unsafe, but we are sure this is a NpmPackageResolvedFile */
-      return cached as NpmPackageResolvedFile;
+      return existing as NpmPackageResolvedFile;
     }
 
     const relativePath = sourceNamePathToFsPath(
@@ -864,11 +924,11 @@ export class ResolverImplementation implements Resolver {
     importPath: string;
   }): Promise<NpmPackageResolvedFile> {
     const sourceName = from.package.rootSourceName + directImport;
-    const cached = this.#resolvedFileBySourceName.get(sourceName);
-    if (cached !== undefined) {
+    const existing = this.#resolvedFileBySourceName.get(sourceName);
+    if (existing !== undefined) {
       /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions --
       The cache is type-unsafe, but we are sure this is a NpmPackageResolvedFile */
-      return cached as NpmPackageResolvedFile;
+      return existing as NpmPackageResolvedFile;
     }
 
     const relativeFsPath = sourceNamePathToFsPath(directImport);
@@ -923,11 +983,11 @@ export class ResolverImplementation implements Resolver {
     const sourceName =
       importedPackage.rootSourceName +
       fsPathToSourceNamePath(fsPathWithinThePackage);
-    const cached = this.#resolvedFileBySourceName.get(sourceName);
-    if (cached !== undefined) {
+    const existing = this.#resolvedFileBySourceName.get(sourceName);
+    if (existing !== undefined) {
       /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions --
       The cache is type-unsafe, but we are sure this is a NpmPackageResolvedFile */
-      return cached as NpmPackageResolvedFile;
+      return existing as NpmPackageResolvedFile;
     }
 
     await this.#validateExistanceAndCasingOfImport({
@@ -958,60 +1018,75 @@ export class ResolverImplementation implements Resolver {
   // >>>>>>>>>> END SECTION: Import resolution techniques
 
   /**
-   * Resolves the npm package imported by the importPath in the from file.
+   * Resolves an npm package as a dependency of another one.
    *
-   * @param from The file from which the import is being resolved.
-   * @param importPath The import path, as written in the source code.
-   * @param importPackageName The name of the package to import, as present in
-   * the importPath, and not necessarily the name of the package in the
-   * package.json.
+   * @param from The package to resolve the dependency from.
+   * @param packageName The name of the package that should be resolved as a
+   * dependency.
    * @returns A ResolvedNpmPackage or PROJECT_ROOT_SENTINEL.
    */
   async #resolveNpmPackage({
     from,
-    importPath,
-    importPackageName,
+    packageName,
   }: {
-    from: ResolvedFile;
-    importPath: string;
-    importPackageName: string;
+    from: ResolvedNpmPackage | typeof PROJECT_ROOT_SENTINEL;
+    packageName: string;
   }): Promise<ResolvedNpmPackage | typeof PROJECT_ROOT_SENTINEL> {
+    let dependenciesMap = this.#dependencyMaps.get(from);
+    if (dependenciesMap === undefined) {
+      dependenciesMap = new Map();
+      this.#dependencyMaps.set(from, dependenciesMap);
+    }
+
+    const dependency = dependenciesMap.get(packageName);
+    if (dependency !== undefined) {
+      return dependency;
+    }
+
     const baseResolutionDirectory =
-      from.type === ResolvedFileType.PROJECT_FILE
-        ? this.#projectRoot
-        : from.package.rootFsPath;
+      from === PROJECT_ROOT_SENTINEL ? this.#projectRoot : from.rootFsPath;
 
     const packageJsonResolution = resolve(
-      importPackageName + "/package.json",
+      packageName + "/package.json",
       baseResolutionDirectory,
     );
 
     if (packageJsonResolution.success === false) {
       if (packageJsonResolution.error === ResolutionError.MODULE_NOT_FOUND) {
         throw new HardhatError(
-          HardhatError.ERRORS.SOLIDITY.IMPORTED_NPM_DEPENDENCY_NOT_INSTALLED,
+          HardhatError.ERRORS.SOLIDITY.NPM_DEPEDNDENCY_NOT_INSTALLED,
           {
-            from: shortenPath(from.fsPath),
-            importPath,
+            from:
+              from === PROJECT_ROOT_SENTINEL
+                ? "your project"
+                : `"${shortenPath(from.rootFsPath)}"`,
+            packageName,
           },
         );
       }
 
       throw new HardhatError(
-        HardhatError.ERRORS.SOLIDITY.IMPORTED_NPM_DEPENDENCY_THAT_USES_EXPORTS,
-        { from: shortenPath(from.fsPath), importPath },
+        HardhatError.ERRORS.SOLIDITY.NPM_DEPEDNDENCY_USES_EXPORTS,
+        {
+          from:
+            from === PROJECT_ROOT_SENTINEL
+              ? "your project"
+              : `"${shortenPath(from.rootFsPath)}"`,
+          packageName,
+        },
       );
     }
 
     const packageJsonPath = packageJsonResolution.absolutePath;
 
+    if (isPackageJsonFromProject(packageJsonPath, this.#projectRoot)) {
+      dependenciesMap.set(packageName, PROJECT_ROOT_SENTINEL);
+      return PROJECT_ROOT_SENTINEL;
+    }
+
     const packageJson = await readJsonFile<{ name: string; version: string }>(
       packageJsonPath,
     );
-
-    if (isPackageJsonFromProject(packageJsonPath, this.#projectRoot)) {
-      return PROJECT_ROOT_SENTINEL;
-    }
 
     const name = packageJson.name;
     const version = isPackageJsonFromMonorepo(
@@ -1021,12 +1096,78 @@ export class ResolverImplementation implements Resolver {
       ? "local"
       : packageJson.version;
 
-    return {
+    const npmPackage: ResolvedNpmPackage = {
       name,
       version,
       rootFsPath: path.dirname(packageJsonPath),
       rootSourceName: npmPackageToRootSourceName(name, version),
     };
+
+    dependenciesMap.set(packageName, npmPackage);
+    return npmPackage;
+  }
+
+  /**
+   * Resolves the npm package imported by the importPath in the from file.
+   *
+   * @param from The file from which the import is being resolved.
+   * @param importPath The import path, as written in the source code.
+   * @param importPackageName The name of the package to import, as present in
+   * the importPath, and not necessarily the name of the package in the
+   * package.json.
+   * @returns A ResolvedNpmPackage or PROJECT_ROOT_SENTINEL.
+   */
+  async #resolveNpmPackageForImport({
+    from,
+    importPath,
+    importPackageName,
+  }: {
+    from: ResolvedFile;
+    importPath: string;
+    importPackageName: string;
+  }): Promise<ResolvedNpmPackage | typeof PROJECT_ROOT_SENTINEL> {
+    try {
+      return await this.#resolveNpmPackage({
+        from:
+          from.type === ResolvedFileType.PROJECT_FILE
+            ? PROJECT_ROOT_SENTINEL
+            : from.package,
+        packageName: importPackageName,
+      });
+    } catch (error) {
+      ensureError(error);
+
+      if (
+        HardhatError.isHardhatError(
+          error,
+          HardhatError.ERRORS.SOLIDITY.NPM_DEPEDNDENCY_NOT_INSTALLED,
+        )
+      ) {
+        throw new HardhatError(
+          HardhatError.ERRORS.SOLIDITY.IMPORTED_NPM_DEPENDENCY_NOT_INSTALLED,
+          {
+            from: shortenPath(from.fsPath),
+            importPath,
+          },
+          error,
+        );
+      }
+
+      if (
+        HardhatError.isHardhatError(
+          error,
+          HardhatError.ERRORS.SOLIDITY.NPM_DEPEDNDENCY_USES_EXPORTS,
+        )
+      ) {
+        throw new HardhatError(
+          HardhatError.ERRORS.SOLIDITY.IMPORTED_NPM_DEPENDENCY_THAT_USES_EXPORTS,
+          { from: shortenPath(from.fsPath), importPath },
+          error,
+        );
+      }
+
+      throw error;
+    }
   }
 
   /**
