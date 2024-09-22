@@ -183,13 +183,17 @@ export class ResolverImplementation implements Resolver {
         absoluteFilePath,
       );
 
-      // Contrary to imports, it's fine if we don't have the right casing here.
+      // We first check if the file has already been resolved.
       //
-      // The cache using #resolvedFileBySourceName may be less effective, having
-      // more misses, but we'd proceed to get the right casing in that case.
+      // Note that it may have recevied the right path, but with the wrong
+      // casing. We don't care at this point, as it would just mean a cache
+      // miss, and we proceed to get the right casing in that case.
       //
       // However, as most of the time these absolute paths are read from the file
       // system, they'd have the right casing in general.
+      //
+      // If we need to fetch the right casing, we'd have to recheck the cache,
+      // to avoid re-resolving the file.
       let sourceName = fsPathToImportPath(relativeFilePath);
       const cached = this.#resolvedFileBySourceName.get(sourceName);
 
