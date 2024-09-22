@@ -20,15 +20,22 @@ const compileAction: NewTaskActionFunction<CompileActionArguments> = async (
     )
   ).flat(1);
 
-  const results = await solidity.build(localFilesToCompile, {
-    force,
-    buildProfile: globalOptions.buildProfile,
-    mergeCompilationJobs: shouldMergeCompilationJobs(
-      globalOptions.buildProfile,
-    ),
-  });
+  const dependenciesToCompile = config.solidity.dependenciesToCompile.map(
+    (dep) => `npm:${dep}`,
+  );
 
-  console.log({ results });
+  const results = await solidity.build(
+    [...localFilesToCompile, ...dependenciesToCompile],
+    {
+      force,
+      buildProfile: globalOptions.buildProfile,
+      mergeCompilationJobs: shouldMergeCompilationJobs(
+        globalOptions.buildProfile,
+      ),
+    },
+  );
+
+  console.log(results);
 };
 
 export default compileAction;

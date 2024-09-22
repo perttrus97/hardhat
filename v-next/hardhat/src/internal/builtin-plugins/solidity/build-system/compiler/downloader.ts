@@ -155,7 +155,7 @@ export class CompilerDownloaderImplementation implements CompilerDownloader {
   ): Promise<void> {
     if (await this.#shouldDownloadCompilerList(versions)) {
       try {
-        console.log(
+        log(
           `Downloading the list of solc builds for platform ${this.#platform}`,
         );
         await this.#downloadCompilerList();
@@ -227,7 +227,6 @@ export class CompilerDownloaderImplementation implements CompilerDownloader {
       `Trying to get a compiler ${version} before it was downloaded`,
     );
 
-    console.log({ version, build, compilerPath });
     if (await exists(this.#getCompilerDoesntWorkFile(build))) {
       return undefined;
     }
@@ -308,6 +307,7 @@ export class CompilerDownloaderImplementation implements CompilerDownloader {
 
     for (const version of versions) {
       if (!listVersions.has(version)) {
+        // TODO: We should also check if it wasn't downloaded soon ago
         return true;
       }
     }
@@ -394,12 +394,10 @@ export class CompilerDownloaderImplementation implements CompilerDownloader {
     const execFileP = promisify(execFile);
 
     try {
-      console.log(`Checking native solc binary at ${solcPath}`);
       await execFileP(solcPath, ["--version"]);
-      console.log(`Native solc binary at ${solcPath} is working`);
       return true;
     } catch {
-      console.log(`Native solc binary at ${solcPath} is not working`);
+      log(`solc binary at ${solcPath} is not working`);
       return false;
     }
   }

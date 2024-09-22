@@ -1,4 +1,5 @@
 import type {
+  FileContent,
   NpmPackageResolvedFile,
   ProjectResolvedFile,
   Remapping,
@@ -23,6 +24,7 @@ import {
 } from "@ignored/hardhat-vnext-utils/fs";
 import { shortenPath } from "@ignored/hardhat-vnext-utils/path";
 import { ResolutionError, resolve } from "@ignored/hardhat-vnext-utils/resolve";
+import { analyze } from "@nomicfoundation/solidity-analyzer";
 
 import { AsyncMutex } from "../../../../core/async-mutex.js";
 
@@ -236,7 +238,7 @@ export class ResolverImplementation implements Resolver {
         type: ResolvedFileType.PROJECT_FILE,
         sourceName,
         fsPath: fsPathWithTheRightCasing,
-        content: await readUtf8File(fsPathWithTheRightCasing),
+        content: await readFileContent(fsPathWithTheRightCasing),
       };
 
       this.#resolvedFileBySourceName.set(sourceName, resolvedFile);
@@ -303,7 +305,7 @@ export class ResolverImplementation implements Resolver {
       // here, as this is not used for imports.
 
       const sourceName = sourceNamePathJoin(
-        parsedNpmModule.package,
+        npmPackageToRootSourceName(npmPackage.name, npmPackage.version),
         fsPathToSourceNamePath(trueCaseFsPath),
       );
 
@@ -322,7 +324,7 @@ export class ResolverImplementation implements Resolver {
         type: ResolvedFileType.NPM_PACKGE_FILE,
         sourceName,
         fsPath,
-        content: await readUtf8File(fsPath),
+        content: await readFileContent(fsPath),
         package: npmPackage,
       };
 
@@ -776,7 +778,7 @@ export class ResolverImplementation implements Resolver {
       type: ResolvedFileType.PROJECT_FILE,
       sourceName,
       fsPath,
-      content: await readUtf8File(fsPath),
+      content: await readFileContent(fsPath),
     };
 
     this.#resolvedFileBySourceName.set(sourceName, resolvedFile);
@@ -838,7 +840,7 @@ export class ResolverImplementation implements Resolver {
       type: ResolvedFileType.NPM_PACKGE_FILE,
       sourceName,
       fsPath,
-      content: await readUtf8File(fsPath),
+      content: await readFileContent(fsPath),
       package: remapping.targetNpmPackage,
     };
 
@@ -891,7 +893,7 @@ export class ResolverImplementation implements Resolver {
       type: ResolvedFileType.NPM_PACKGE_FILE,
       sourceName,
       fsPath: filePath,
-      content: await readUtf8File(filePath),
+      content: await readFileContent(filePath),
       package: from.package,
     };
 
@@ -946,7 +948,7 @@ export class ResolverImplementation implements Resolver {
       type: ResolvedFileType.NPM_PACKGE_FILE,
       sourceName,
       fsPath,
-      content: await readUtf8File(fsPath),
+      content: await readFileContent(fsPath),
       package: from.package,
     };
 
@@ -1006,7 +1008,7 @@ export class ResolverImplementation implements Resolver {
       type: ResolvedFileType.NPM_PACKGE_FILE,
       sourceName,
       fsPath,
-      content: await readUtf8File(fsPath),
+      content: await readFileContent(fsPath),
       package: importedPackage,
     };
 
@@ -1502,4 +1504,18 @@ export function sourceNamePathToFsPath(sourceNamePath: string): string {
  */
 function sourceNamePathJoin(...parts: string[]): string {
   return fsPathToSourceNamePath(path.join(...parts));
+}
+
+/**
+ * Reads and analyzes the file at the given absolute path.
+ */
+async function readFileContent(absolutePath: string): Promise<FileContent> {
+  const text = await readUtf8File(absolutePath);
+  const { imports, versionPragmas } = analyze(text);
+
+  return {
+    text,
+    importPaths: imports,
+    versionPragmas,
+  };
 }

@@ -51,7 +51,6 @@ export default async (): Promise<Partial<HardhatRuntimeEnvironmentHooks>> => {
         projectRoot: hre.config.paths.root,
         artifactsPath: hre.config.paths.artifacts,
         cachePath: hre.config.paths.cache,
-        sourcesPaths: hre.config.paths.sources.solidity,
       });
     },
   };

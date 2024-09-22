@@ -16,7 +16,7 @@ const hardhatPlugin: HardhatPlugin = {
         name: "force",
         description: "Force compilation even if no files have changed",
       })
-      .setAction(import.meta.resolve("./task-action.js"))
+      .setAction(import.meta.resolve("./tasks/compile.js"))
       .build(),
   ],
   globalOptions: [

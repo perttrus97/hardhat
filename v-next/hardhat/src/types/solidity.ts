@@ -77,7 +77,7 @@ export interface CacheHitFileBuildResult {
 }
 
 export interface SuccessfulFileBuildResult {
-  type: FileBuildResultType.BUILD_FAILURE;
+  type: FileBuildResultType.BUILD_SUCCESS;
   buildId: string;
   contractArtifactsGenerated: string[];
 }
@@ -96,28 +96,28 @@ export interface SolidityBuildSystem {
   /**
    * Builds the provided files, generating their compilation artifacts.
    *
-   * @param files The files to build, which can be either absolute paths or
+   * @param rootFiles The files to build, which can be either absolute paths or
    * `npm:<package-name>/<file-path>` URIs.
    * @param options The options to use when building the files.
    * @returns An `Map` of the files to their build results, or an error if
    * there was a problem when trying to create the necessary compilation jobs.
    */
   build(
-    files: string[],
+    rootFiles: string[],
     options?: BuildOptions,
   ): Promise<CompilationJobCreationError | Map<string, FileBuildResult>>;
 
   /**
    * Returns the BuildInfos that would be used to build the provided files.
    *
-   * @param files The files to analyze, which can be either absolute paths or
+   * @param rootFiles The files to analyze, which can be either absolute paths or
    * `npm:<package-name>/<file-path>` URIs.
    * @param options The options to use when analyzing the files.
    * @returns A `Map` of the files to their build infos, or an error if there
    * was a problem when trying to create the necessary compilation jobs.
    */
   getBuildInfos(
-    files: string[],
+    rootFiles: string[],
     options?: GetBuildInfoOptions,
   ): Promise<CompilationJobCreationError | Map<string, BuildInfo>>;
 

@@ -50,10 +50,11 @@ function assertResolvedProjectFile(
 
   // Just as a way to validate which file we are reading the contents from
   // we wrote their relative unix-style relative path from the fixture root
-  assert.equal(
-    resolvedFile.content,
-    fsPathToSourceNamePath(pathFromTestFixturesRoot) + "\n",
-  );
+  assert.deepEqual(resolvedFile.content, {
+    text: fsPathToSourceNamePath(pathFromTestFixturesRoot) + "\n",
+    importPaths: [],
+    versionPragmas: [],
+  });
 }
 
 function assertNpmPackageResolvedFile(
@@ -92,10 +93,11 @@ function assertNpmPackageResolvedFile(
 
   // Just as a way to validate which file we are reading the contents from
   // we wrote their relative unix-style relative path from the fixture root
-  assert.equal(
-    resolvedFile.content,
-    fsPathToSourceNamePath(filePathFromTestFixturesRoot) + "\n",
-  );
+  assert.deepEqual(resolvedFile.content, {
+    text: fsPathToSourceNamePath(filePathFromTestFixturesRoot) + "\n",
+    importPaths: [],
+    versionPragmas: [],
+  });
 }
 
 describe("Resolver", () => {

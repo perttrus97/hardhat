@@ -154,7 +154,8 @@ const config: HardhatUserConfig = {
         version: "0.8.2",
       },
     },
-    dependenciesToCompile: ["@OpenZeppelin/contracts/token/ERC20/ERC20.sol"],
+    dependenciesToCompile: ["@openzeppelin/contracts/token/ERC20/ERC20.sol"],
+    remappings: ["remapped/=npm/@openzeppelin/contracts@5.0.2/access/"],
   },
 };
 

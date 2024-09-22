@@ -51,7 +51,7 @@ declare module "../../../types/config.js" {
 
   export interface SolidityConfig {
     profiles: Record<string, SolidityBuildProfileConfig>;
-    dependenciesToCompile?: string[];
+    dependenciesToCompile: string[];
     remappings: string[];
   }
 

@@ -866,7 +866,6 @@ Please try renaming the directory.`,
       websiteTitle: "Resolution of non-existent npm file",
       websiteDescription: `You are tying to resolve an npm file that doesn't exist within its package.`,
     },
-
     DOWNLOAD_FAILED: {
       number: 1024,
       messageTemplate:

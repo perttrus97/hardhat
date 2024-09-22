@@ -57,7 +57,7 @@ export interface ProjectResolvedFile {
   /**
    * The file contents.
    */
-  content: string;
+  content: FileContent;
 }
 
 /**
@@ -79,7 +79,7 @@ export interface NpmPackageResolvedFile {
   /**
    * The file contents.
    */
-  content: string;
+  content: FileContent;
 
   /**
    * The package this file belongs to.
@@ -91,6 +91,26 @@ export interface NpmPackageResolvedFile {
  * The resolult of resolving a file or import using a Resolver.
  */
 export type ResolvedFile = ProjectResolvedFile | NpmPackageResolvedFile;
+
+/**
+ * The contents of a Solidity file.
+ */
+export interface FileContent {
+  /**
+   * The raw text of the file.
+   */
+  text: string;
+
+  /**
+   * The list of importPaths that are used in the file.
+   */
+  importPaths: string[];
+
+  /**
+   * The list of version pragmas that are used in the file.
+   */
+  versionPragmas: string[];
+}
 
 /**
  * A solc remapping.
