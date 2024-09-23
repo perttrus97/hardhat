@@ -8,19 +8,19 @@ import {
 } from "@nomicfoundation/slang/kinds/index.js";
 import { Language } from "@nomicfoundation/slang/language/index.js";
 import { Query } from "@nomicfoundation/slang/query/index.js";
-import { NodeType } from "@nomicfoundation/slang/cst/index.js";
+import {
+  NodeType,
+  NonterminalNode,
+  TerminalNode,
+} from "@nomicfoundation/slang/cst/index.js";
 import { cursor } from "@nomicfoundation/slang/napi-bindings/generated/index.js";
+import { Comparator, Range } from "semver";
 
 export type SourceName = string;
-export type VersionNumber = number[];
+export type VersionNumber = string;
 
-const availableVersionStrings = Language.supportedVersions();
-const language = new Language(
-  availableVersionStrings[availableVersionStrings.length - 1],
-);
-const availableVersions: VersionNumber[] = availableVersionStrings.map((v) =>
-  v.split(".").map(Number),
-);
+const availableVersions = Language.supportedVersions();
+const language = new Language(availableVersions[availableVersions.length - 1]);
 
 const pathImportQuery = Query.parse("[PathImport @path path: [_]]");
 const namedImportQuery = Query.parse("[NamedImport @path path: [_]]");
@@ -28,7 +28,7 @@ const importDeconstructionQuery = Query.parse(
   "[ImportDeconstruction @path path: [_]]",
 );
 const versionPragmaQuery = Query.parse(
-  "[VersionPragma [VersionExpressionSets (@versionExpression [VersionExpression])+]]",
+  "[VersionPragma [VersionExpressionSets [VersionExpressionSet (@versionExpression [VersionExpression])+]]]",
 );
 
 export class ProjectDefinition {
@@ -129,9 +129,9 @@ export abstract class ProjectModel {
               // VersionExpressionSets are the disjunction of VersionExpression(s)
 
               // Filter out any parse errors
-              const compatibleVersions = match.captures.versionExpression
-                .map(bitsetFromVersionExpression)
-                .filter((v) => v !== undefined);
+              const compatibleVersions = match.captures.versionExpression.map(
+                (expr) => this.bitsetFromVersionExpression(expr),
+              );
 
               // No point adding a constraint that was nothing but parse errors
               if (compatibleVersions.length !== 0) {
@@ -148,7 +148,7 @@ export abstract class ProjectModel {
         // Compute the transitive dependencies and version constraints of the root
 
         const dependencies = new Set<string>();
-        const compatibleVersions = new BitSet.default(
+        let compatibleVersions = new BitSet.default(
           availableVersions.length,
         ).flip();
 
@@ -158,12 +158,15 @@ export abstract class ProjectModel {
             source !== undefined,
             "We have already added this source to the graph",
           );
+          compatibleVersions = source.compatibleVersions;
           for (const dependency of source.dependencies) {
             if (!dependencies.has(dependency)) {
               dependencies.add(dependency);
               visit(dependency);
             }
-            compatibleVersions.and(source.compatibleVersions);
+            compatibleVersions = compatibleVersions.and(
+              source.compatibleVersions,
+            );
           }
         };
 
@@ -196,93 +199,27 @@ export abstract class ProjectModel {
     return root;
   }
 
+  bitsetFromVersionExpression(expr: Cursor): BitSet.default {
+    const node = expr.node();
+    assertHardhatInvariant(
+      node instanceof NonterminalNode,
+      "The query can only return a nonterminal node",
+    );
+    const exprAsString = node.unparse();
+    console.log(exprAsString);
+    const range = new Range(exprAsString);
+    const bitset = new BitSet.default(availableVersions.length);
+    for (let i = availableVersions.length - 1; i >= 0; i--) {
+      if (range.test(availableVersions[i])) {
+        bitset.set(i);
+      }
+    }
+    return bitset;
+  }
+
   abstract getSourceContent(_sourceName: SourceName): Promise<string>;
   abstract resolveImport(
     _context: SourceName,
     _importPath: string,
   ): Promise<SourceName>;
-}
-
-const versionExpressionQueries = [
-  Query.parse(
-    "[VersionRange [_ @start start:[VersionLiteral] @end end:[VersionLiteral]]]",
-  ),
-  Query.parse(
-    "[VersionTerm  [_ operator:[VersionOperator @operator [_]] @literal literal:[VersionLiteral]]]",
-  ),
-];
-
-// Parse error => undefined
-function bitsetFromVersionExpression(expr: Cursor): BitSet.default | undefined {
-  const matches = expr.spawn().query(versionExpressionQueries);
-  const match = matches.next();
-  if (match === null) return undefined;
-
-  type PragmaVersionSegment = number | "*";
-  type PragmaVersionNumber = PragmaVersionSegment[];
-
-  if (match.queryNumber === 0) {
-    // VersionRange
-
-    // TODO: how do wildcards work in this context?
-    // TODO: what happens if the start is greater than the end - is this an empty range?
-
-    const start = versionIndicesFromLiteral(match.captures.start[0]);
-    if (start === undefined) return undefined;
-
-    const end = versionIndicesFromLiteral(match.captures.end[0]);
-    if (end === undefined) return undefined;
-
-    // TODO: compute bitset
-  } else {
-    // VersionTerm
-
-    const literal = versionIndicesFromLiteral(match.captures.literal[0]);
-    if (literal === undefined) return undefined;
-
-    // TODO: no operator is the same as TerminalKind.Equal
-    const operator = match.captures.operator[0].node();
-    // TODO: use assertion functions from v1 api
-    assertHardhatInvariant(
-      operator.type === NodeType.Terminal,
-      "Expected operator to be a terminal",
-    );
-
-    // TODO: compute bitset
-    // TODO: Invalid operator applications i.e. "< 0.4.11" should be caught by the parser
-    switch (operator.kind) {
-      case TerminalKind.Caret:
-        // Anything that doesn't change the first non-zero segment of the version
-        // TODO: does a wildcard count as non-zero for this purpose?
-        break;
-      case TerminalKind.Tilde:
-        // Locks major and minor segments of the version - e.g. set third segment to '*'
-        break;
-      case TerminalKind.Equal:
-        break;
-      case TerminalKind.LessThan:
-        // TODO: what does this mean if wildcards are included?
-        break;
-      case TerminalKind.GreaterThan:
-        // TODO: what does this mean if wildcards are included?
-        break;
-      case TerminalKind.LessThanEqual:
-        // TODO: what does this mean if wildcards are included?
-        break;
-      case TerminalKind.GreaterThanEqual:
-        // TODO: what does this mean if wildcards are included?
-        break;
-      default:
-        assertHardhatInvariant(false, `Unexpected operator ${operator}`);
-    }
-  }
-}
-
-// Parse error, or invalid version => undefined
-// TODO: Invalid versions should be caught by the parser
-function versionIndicesFromLiteral(
-  literal: cursor.Cursor,
-): number[] | undefined {
-  // Need to return all matches, in order
-  throw new Error("Function not implemented.");
 }
