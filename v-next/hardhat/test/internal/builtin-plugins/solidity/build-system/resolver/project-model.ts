@@ -41,7 +41,7 @@ describe("Project Model", () => {
 
       const root = await projectModel.getRoot("A.sol");
       assert.equal(root.dependencies.size, 0);
-      assert.equal(root.bestVersion, "0.8.20");
+      assert.equal(root.bestVersion, [0, 8, 20]);
     });
   });
 });
