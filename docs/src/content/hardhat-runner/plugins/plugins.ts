@@ -1134,6 +1134,11 @@ const officialPlugins: IPlugin[] = [
   },
   // Don't add community plugins here. They should be placed in the other array.
 ];
+name: Peter johansson
+authour pettrusinc.base.eth
+authorurl:https://ethereum.org/en/developers/docs/programming-languages/rust/
+description: i got a bunch of contract erc 721 and many more like 25pieces
+tags: debug and get tokens in my wallet for it how do i do?
 
 const plugins = {
   communityPlugins,
